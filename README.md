@@ -42,18 +42,36 @@ with its **own CI** and plugs in through the shared `web` network (see
 
 ## Run locally
 
-The homepage is plain static — open `site/index.html`, or serve it:
+**Quick homepage preview** — just the static `site/`, served by the same Caddy
+image, on `:8080`:
 
 ```bash
-cd site && python3 -m http.server 8080   # http://localhost:8080
+docker run --rm -p 8080:80 -v "$PWD/site:/srv:ro" caddy:2-alpine \
+  caddy file-server --root /srv --listen :80
+# → http://localhost:8080  (cards won't open — there's no edge behind them)
 ```
 
-(Card links use the page's host, so locally they point at `*.localhost` and
-won't resolve to the real projects — that's expected; it's a content preview.)
+**Full edge** — homepage *and* projects with self-signed HTTPS, so the cards
+actually open. The trick is `DOMAIN=localhost`: Caddy issues a local cert for
+`localhost`/`*.localhost` instead of calling Let's Encrypt.
 
-To exercise the full edge locally you'd run the Caddy container with a local
-`.env` and the `web` network; in practice the edge is validated in CI and on the
-server.
+```bash
+docker network create web                          # once
+# put each project on `web` (its base compose already joins it):
+(cd ../roadtrip-site && docker compose up -d --build)
+#   …or attach an already-running container:  docker network connect web roadtrip
+
+printf 'DOMAIN=localhost\nACME_EMAIL=dev@localhost\n' > .env
+docker compose up -d
+# → https://localhost            homepage
+# → https://roadtrip.localhost   roadtrip through the edge
+```
+
+Your browser warns about the self-signed cert — accept it (local only).
+Chrome/Edge resolve `*.localhost` to 127.0.0.1 automatically; on Safari/Firefox
+add `127.0.0.1 localhost roadtrip.localhost` to `/etc/hosts`. Tear down with
+`docker compose down`. The local `.env` is gitignored — the server keeps its own
+with the real domain.
 
 ## Add a project
 
