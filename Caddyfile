@@ -34,6 +34,14 @@ roadtrip.{$DOMAIN} {
 	reverse_proxy roadtrip:8000
 }
 
+# ── Project #2: availability — personal availability calendar ────────────────
+# Keep this block BARE: the Flask app already gzips (Flask-Compress) and sets
+# X-Content-Type-Options / X-Frame-Options / Referrer-Policy (and no-store on
+# /api/*). Adding `encode` or headers here would double them up.
+availability.{$DOMAIN} {
+	reverse_proxy availability:8000
+}
+
 # ── Template for the next project (copy, change the two names, uncomment) ─────
 # newproj.{$DOMAIN} {
 #     reverse_proxy newproj:8000

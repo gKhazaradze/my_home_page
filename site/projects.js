@@ -23,4 +23,12 @@ const PROJECTS = [
     // tags: ["travel", "europe", "flask"],
     thumbnail: "assets/roadtrip.png",
   },
+  {
+    sub: "availability",
+    title: "Availability",
+    blurb: "When I'm around, when I'm away, and where there's a free seat — shared per friend, with seat requests.",
+    status: "building",
+    // tags: ["calendar", "flask"],
+    thumbnail: "assets/availability.png",
+  },
 ];
