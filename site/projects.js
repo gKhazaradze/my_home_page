@@ -29,6 +29,6 @@ const PROJECTS = [
     blurb: "When I'm around, when I'm away, and where there's a free seat — shared per friend, with seat requests.",
     status: "building",
     // tags: ["calendar", "flask"],
-    thumbnail: "assets/availability.png",
+    thumbnail: "assets/availability.svg",
   },
 ];
