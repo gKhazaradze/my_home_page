@@ -98,8 +98,8 @@ sudo -u "$DEPLOY_USER" git config --global --add safe.directory "$INSTALL_DIR" |
 git config --global --add safe.directory "$INSTALL_DIR" || true
 
 if [[ -d "$INSTALL_DIR/.git" ]]; then
-    sudo -u "$DEPLOY_USER" git -C "$INSTALL_DIR" fetch --prune origin main
-    sudo -u "$DEPLOY_USER" git -C "$INSTALL_DIR" reset --hard origin/main
+    sudo -u "$DEPLOY_USER" git -C "$INSTALL_DIR" fetch --prune origin master
+    sudo -u "$DEPLOY_USER" git -C "$INSTALL_DIR" reset --hard origin/master
 elif [[ -z "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]]; then
     sudo -u "$DEPLOY_USER" git clone "$REPO_URL" "$INSTALL_DIR"
 else
@@ -165,7 +165,7 @@ cat <<EOF
    1. DNS: point  $DOMAIN  and  *.$DOMAIN  at $PUBLIC_IP (use an Elastic IP).
    2. Security group: allow inbound 443/TCP (and 443/UDP for HTTP/3) + 80.
    3. Configure GitHub Actions secrets (EC2_HOST/EC2_USER/EC2_SSH_KEY) — see SETUP.md.
-   4. From now on, 'git push' to main redeploys the edge automatically.
+   4. From now on, 'git push' to master redeploys the edge automatically.
 
  NOTE: '$DEPLOY_USER' was added to the 'docker' group. If you're still in the
  SSH session you ran this from, log out and back in before running docker

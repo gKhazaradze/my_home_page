@@ -80,7 +80,7 @@ ssh -i your-key.pem ec2-user@<Elastic IP>     # or ubuntu@ on Ubuntu/Debian
 
 curl -sSL https://raw.githubusercontent.com/gKhazaradze/my_home_page/main/deploy/setup-platform.sh > setup-platform.sh
 chmod +x setup-platform.sh
-sudo ./setup-platform.sh https://github.com/gKhazaradze/my_home_page.git example.com you@example.com
+sudo ./setup-platform.sh https://github.com/gKhazaradze/my_home_page.git example.com gKhazaradze@example.com
 ```
 
 If roadtrip is **still publishing :80**, Caddy can't bind it and the script
@@ -125,14 +125,23 @@ survives.
 
 ## Step 6 — Verify
 
+Run each on its own line — don't paste trailing `#` notes into an interactive
+shell that doesn't treat `#` as a comment (e.g. zsh without `interactive_comments`),
+or curl will receive the note words as bogus URLs:
+
 ```bash
-curl -I  https://example.com                       # homepage, 200, valid cert
-curl -sf https://www.example.com -o /dev/null -w '%{http_code}\n'   # 308 → apex
-curl -sf https://roadtrip.example.com/api/health   # {"ok":true,"version":"2.0.0"}
-sudo docker exec caddy caddy list-certificates     # apex + roadtrip certs issued
+curl -I https://georgelands.com
+curl -sI https://www.georgelands.com | grep -i location
+curl -sf https://roadtrip.georgelands.com/api/health
+sudo docker exec caddy caddy list-certificates
 ```
 
-Open `https://roadtrip.example.com` in a browser: the Leaflet map + assets load
+Expected: the apex returns `HTTP/2 200` with `server: Caddy` and a valid cert;
+`www` returns a `301` redirect to `https://georgelands.com`; the roadtrip health
+check returns `{"ok":true,"version":"2.0.0"}`; and `list-certificates` shows
+certs for the apex, `www`, and `roadtrip.` subdomain.
+
+Open `https://roadtrip.georgelands.com` in a browser: the Leaflet map + assets load
 and the passenger-edit feature unlocks with the trip key — proving the root
 origin is preserved and the DB survived.
 
@@ -151,10 +160,10 @@ Add repo secrets (Settings → Secrets and variables → Actions):
 | `EC2_HOST` | Elastic IP or hostname |
 | `EC2_USER` | `ec2-user` (Amazon Linux) or `ubuntu` |
 | `EC2_SSH_KEY` | Contents of your deploy **private** key |
-| `PLATFORM_DOMAIN` | `example.com` (used by the post-deploy HTTPS health check) |
+| `PLATFORM_DOMAIN` | `georgelands.com` (used by the post-deploy HTTPS health check) |
 
 Reuse the same deploy SSH key you made for roadtrip (its public half is already
-in the box's `~/.ssh/authorized_keys`). From now on, **push to `main`
+in the box's `~/.ssh/authorized_keys`). From now on, **push to `master`
 redeploys the edge** — and roadtrip keeps deploying itself independently.
 
 ---
@@ -176,6 +185,15 @@ network-only (remove its `ports:` block) or stop the old service.
 **HTTPS fails / cert not issued.** Check `sudo docker compose logs caddy`. Common
 causes: DNS not yet pointing at the box, :80 or :443 blocked in the security
 group, or LE rate-limited (you iterated without staging — wait, or use staging).
+
+**Cert errors like `lookup acme-v02.api.letsencrypt.org on 127.0.0.53:53 ...
+connection refused`.** The container can't resolve external DNS — the host uses
+**systemd-resolved**, whose `127.0.0.53` stub isn't reachable from inside a
+container. The compose file already sets `dns: [8.8.8.8, 1.1.1.1]` on Caddy to
+handle this; for a host-wide fix (covers every container) add
+`{ "dns": ["8.8.8.8", "1.1.1.1"] }` to `/etc/docker/daemon.json` and
+`sudo systemctl restart docker`. Service discovery (`roadtrip:8000`) is
+unaffected — that uses Docker's `127.0.0.11` resolver.
 
 **Homepage 200 but a project subdomain 502s.** That project's container isn't up
 or isn't on `web`. `docker ps`, `docker network inspect web`, and check the

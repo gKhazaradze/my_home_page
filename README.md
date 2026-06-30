@@ -67,7 +67,7 @@ Push. Wildcard DNS + auto-HTTPS handle the rest.
 
 ## Deploy
 
-`git push` to `main` runs the workflow: it validates the Caddyfile/compose/JS,
+`git push` to `master` runs the workflow: it validates the Caddyfile/compose/JS,
 SSHes to the box, syncs `/srv/platform`, `docker compose up -d`, reloads Caddy,
 and health-checks the homepage. First-time setup and migrating the existing
 roadtrip box are in [SETUP.md](SETUP.md).

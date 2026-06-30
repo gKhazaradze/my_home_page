@@ -19,6 +19,11 @@ services:
       - "443:443"
       - "443:443/udp"              # HTTP/3 (open UDP 443 in the SG; harmless if not)
     env_file: .env                 # DOMAIN, ACME_EMAIL — referenced in the Caddyfile
+    dns:                           # upstreams for the container's embedded resolver
+      - 8.8.8.8                    # on systemd-resolved hosts the 127.0.0.53 stub
+      - 1.1.1.1                    # isn't reachable in-container, so ACME (Let's
+                                   # Encrypt) DNS lookups fail without this.
+                                   # (roadtrip:8000 still resolves via 127.0.0.11.)
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./site:/srv/site:ro        # homepage static files (served by file_server)
