@@ -1,0 +1,7 @@
+# Local env / secrets (DOMAIN + ACME_EMAIL live here on the server)
+.env
+
+# Editor / OS
+.DS_Store
+**/.DS_Store
+.vscode/

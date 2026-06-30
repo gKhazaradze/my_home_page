@@ -1,0 +1,38 @@
+# The platform edge. One container (Caddy) owns host :80/:443: it terminates
+# TLS, serves the homepage static files directly, and reverse-proxies each
+# project subdomain to a project container by name over the shared `web`
+# network. Projects (roadtrip, etc.) live in their own repos and join `web`.
+#
+#   docker compose up -d            # start the edge + homepage
+#   docker compose logs -f caddy    # watch cert issuance / requests
+#
+# DOMAIN + ACME_EMAIL come from a .env file next to this one (see .env.example).
+# The `web` network must already exist:  docker network create web
+
+services:
+  caddy:
+    image: caddy:2-alpine          # upstream image — no build step
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"              # HTTP/3 (open UDP 443 in the SG; harmless if not)
+    env_file: .env                 # DOMAIN, ACME_EMAIL — referenced in the Caddyfile
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./site:/srv/site:ro        # homepage static files (served by file_server)
+      - caddy_data:/data           # ACME account + issued certs — MUST persist
+      - caddy_config:/config
+    networks: [web]
+
+networks:
+  web:
+    external: true                 # created once out-of-band; shared, not owned
+    name: web
+
+volumes:
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config

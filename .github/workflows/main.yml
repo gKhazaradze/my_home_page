@@ -1,0 +1,98 @@
+name: Deploy (Platform edge)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # allow manual triggering from the GitHub UI
+
+concurrency:
+  group: deploy-platform-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Syntax-check homepage JS
+        run: |
+          # Fail fast if the registry / renderer is broken before shipping
+          node -c site/projects.js
+          node -c site/render.js
+
+      - name: Validate Caddyfile
+        run: |
+          # Caddy reads {$DOMAIN}/{$ACME_EMAIL} from the environment; supply
+          # dummies so validation can resolve them.
+          docker run --rm \
+            -e DOMAIN=example.com -e ACME_EMAIL=ci@example.com \
+            -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Validate compose file
+        run: |
+          # docker-compose.yml has `env_file: .env`; provide a throwaway one so
+          # `config` can resolve it (the real .env lives on the server).
+          cp .env.example .env
+          docker compose -f docker-compose.yml config -q
+          rm -f .env
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            echo "--- Syncing latest code ---"
+            sudo git config --global --add safe.directory /srv/platform || true
+            sudo git -C /srv/platform fetch --prune origin main
+            sudo git -C /srv/platform reset --hard origin/main
+
+            echo "--- Ensuring shared network exists ---"
+            sudo docker network inspect web >/dev/null 2>&1 || sudo docker network create web
+
+            echo "--- Building & (re)starting the edge ---"
+            cd /srv/platform
+            sudo docker compose up -d --remove-orphans
+
+            echo "--- Reloading Caddy (applies Caddyfile-only edits) ---"
+            # `up -d` alone won't pick up a bind-mounted Caddyfile change, so
+            # reload explicitly against the running container's admin API.
+            sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+
+            echo "--- Pruning dangling images ---"
+            sudo docker image prune -f >/dev/null 2>&1 || true
+
+            echo "--- Waiting for the edge to answer on :80 ---"
+            for i in $(seq 1 15); do
+              if curl -sS -o /dev/null --max-time 2 http://127.0.0.1/; then
+                echo "Edge is up"; exit 0
+              fi
+              sleep 2
+            done
+            echo "Edge failed to come up in time"
+            sudo docker compose logs --tail=40
+            exit 1
+
+      - name: Post-deploy public health check
+        run: |
+          # Verify the homepage is reachable over HTTPS at the real domain.
+          for i in 1 2 3 4 5; do
+            if curl -sf --max-time 5 "https://${{ secrets.PLATFORM_DOMAIN }}/" > /dev/null; then
+              echo "Homepage healthy over HTTPS"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Public homepage not responding"
+          exit 1

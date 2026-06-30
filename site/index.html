@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>George — what I'm up to</title>
+<meta name="description" content="Projects I'm building and running — a home base that links out to each one." />
+
+<!-- Social link previews -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="George — what I'm up to" />
+<meta property="og:description" content="Projects I'm building and running." />
+
+<!-- Inline SVG favicon: the ▸ mark in the accent blue (no extra asset) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='86' fill='%232563eb'%3E%E2%96%B8%3C/text%3E%3C/svg%3E" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="/" class="logo">
+      <span class="logo-mark">▸</span>
+      <span class="logo-text">George</span>
+    </a>
+    <div class="nav-meta">what I'm up to</div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>What I'm up to</h1>
+    <p class="hero-sub">Things I'm building and running. Click any project to open it.</p>
+  </div>
+</header>
+
+<main class="container">
+  <section id="projects" class="project-grid">
+    <!-- cards injected by render.js from projects.js -->
+  </section>
+  <p id="empty" class="empty" hidden>Nothing here yet — check back soon.</p>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span class="footer-logo">▸ George</span>
+    <span class="footer-meta">Built and hosted on one small box.</span>
+  </div>
+</footer>
+
+<script src="projects.js"></script>
+<script src="render.js"></script>
+</body>
+</html>

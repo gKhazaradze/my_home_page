@@ -1,0 +1,40 @@
+# ─────────────────────────────────────────────────────────────────────────
+# The entire edge routing table. Caddy auto-provisions Let's Encrypt certs
+# per hostname (HTTP-01), so every site below gets HTTPS with no extra config.
+#
+# DOMAIN and ACME_EMAIL are read from the .env file (see docker-compose.yml),
+# so this file is reusable and the domain is never hard-coded.
+#
+# Adding a project = paste the 3-line template block at the bottom, change the
+# subdomain + container name, and `caddy reload`. The wildcard DNS A record
+# means no DNS change is needed for a new subdomain.
+# ─────────────────────────────────────────────────────────────────────────
+{
+	email {$ACME_EMAIL}
+}
+
+# ── Apex: the homepage hub, served straight off disk (no homepage container) ──
+{$DOMAIN} {
+	root * /srv/site
+	file_server
+	encode zstd gzip # homepage is static; safe to compress here
+}
+
+# www → apex (single canonical homepage)
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+# ── Project #1: roadtrip — reached by container name over the `web` network ──
+# Keep this block BARE: roadtrip's Flask already gzips (Flask-Compress) and sets
+# X-Content-Type-Options / X-Frame-Options / Referrer-Policy. Adding `encode` or
+# headers here would double-compress and emit doubled headers. Caddy passes the
+# app's responses straight through.
+roadtrip.{$DOMAIN} {
+	reverse_proxy roadtrip:8000
+}
+
+# ── Template for the next project (copy, change the two names, uncomment) ─────
+# newproj.{$DOMAIN} {
+#     reverse_proxy newproj:8000
+# }
