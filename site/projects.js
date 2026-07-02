@@ -27,7 +27,7 @@ const PROJECTS = [
     sub: "availability",
     title: "Availability",
     blurb: "When I'm around, when I'm away, and where there's a free seat — shared per friend, with seat requests.",
-    status: "building",
+    status: "live",
     // tags: ["calendar", "flask"],
     thumbnail: "assets/availability.svg",
   },
