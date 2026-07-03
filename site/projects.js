@@ -25,7 +25,7 @@ const PROJECTS = [
   },
   {
     sub: "availability",
-    title: "Availability",
+    title: "Availability Calendar",
     blurb: "When I'm around, when I'm away, and where there's a free seat — shared per friend, with seat requests.",
     status: "live",
     // tags: ["calendar", "flask"],
