@@ -1,8 +1,10 @@
 /* ─────────────────────────────────────────────────────────────────────────
    Homepage hub — visual sibling of the roadtrip site. The :root tokens below
    are copied from roadtrip's frontend/styles.css so the hub and the projects
-   share one design language. (roadtrip's shipped theme is light; to go dark,
-   swap this :root block.)
+   share one design language. Light is the default; dark mode is opt-in via the
+   navbar ☾/☀ toggle and overrides only the color tokens under
+   [data-theme="dark"] (see theme.js). Every rule reads var()s, so nothing else
+   needs to know which theme is active.
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -10,6 +12,7 @@
   --bg-soft: #f8f9fb;
   --bg-card: #ffffff;
   --bg-hover: #f1f3f7;
+  --nav-bg: rgba(255,255,255,0.95);
   --border: #e5e7eb;
   --border-strong: #d1d5db;
   --text: #111827;
@@ -31,6 +34,34 @@
   --radius-lg: 12px;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  color-scheme: light;
+}
+
+/* Dark mode — opt-in, toggled by the navbar button and persisted in localStorage
+   (see theme.js). Overrides only the color tokens; the palette is shared with
+   availability_calendar's dark theme so the platform reads as one product. */
+:root[data-theme="dark"] {
+  --bg: #171a21;
+  --bg-soft: #0f1115;
+  --bg-card: #171a21;
+  --bg-hover: #1f242e;
+  --nav-bg: rgba(15,17,21,0.9);
+  --border: #2a313d;
+  --border-strong: #3d4652;
+  --text: #e7ebf2;
+  --text-muted: #93a0b4;
+  --text-subtle: #6b7686;
+  --accent: #4f8cff;
+  --accent-hover: #6ba0ff;
+  --accent-soft: rgba(79,140,255,0.15);
+  --danger: #ef4f5b;
+  --success: #2fbf71;
+  --warning: #f5a623;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 20px rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.4);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,7 +79,7 @@ a { color: inherit; text-decoration: none; }
 /* ── Navbar (sticky, translucent — mirrors roadtrip) ── */
 .navbar {
   position: sticky; top: 0; z-index: 1000;
-  background: rgba(255,255,255,0.95);
+  background: var(--nav-bg);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
@@ -64,6 +95,16 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--font-mono); font-size: 12px;
   color: var(--text-subtle); text-transform: lowercase;
 }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; flex: 0 0 auto;
+  background: var(--bg-hover); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: 16px; line-height: 1; cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.nav-btn:hover { border-color: var(--border-strong); background: var(--bg-soft); }
 
 /* ── Hero ── */
 .hero { border-bottom: 1px solid var(--border); background: var(--bg); }
