@@ -16,19 +16,19 @@
 
 const PROJECTS = [
   {
+    sub: "availability",
+    title: "My Calendar",
+    blurb: "When I'm around, when I'm away, and where there's a free seat for you",
+    status: "live",
+    // tags: ["calendar", "flask"],
+    thumbnail: "assets/availability.svg",
+  },
+  {
     sub: "roadtrip",
-    title: "Tbilisi → Portimão",
+    title: "Tbilisi → Portimão Roadtrip",
     blurb: "A 16-day driving expedition across seven countries, with an interactive route map and a shared passenger roster.",
     status: "live",
     // tags: ["travel", "europe", "flask"],
     thumbnail: "assets/roadtrip.png",
-  },
-  {
-    sub: "availability",
-    title: "Availability Calendar",
-    blurb: "When I'm around, when I'm away, and where there's a free seat — shared per friend, with seat requests.",
-    status: "live",
-    // tags: ["calendar", "flask"],
-    thumbnail: "assets/availability.svg",
   },
 ];
