@@ -21,9 +21,10 @@ jobs:
 
       - name: Syntax-check homepage JS
         run: |
-          # Fail fast if the registry / renderer is broken before shipping
+          # Fail fast if the registry / renderers are broken before shipping
           node -c site/projects.js
           node -c site/render.js
+          node -c site/landing.js
 
       - name: Validate Caddyfile
         run: |

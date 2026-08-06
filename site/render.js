@@ -1,4 +1,6 @@
-// Renders the PROJECTS registry (projects.js) into cards. Pure DOM, no deps,
+// Renders the PROJECTS registry (projects.js) into cards on /projects.html —
+// the right-hand side of the landing page. (The left-hand side, the calendar,
+// is drawn by landing.js and never appears in this grid.) Pure DOM, no deps,
 // no build step. The project URL is derived from the page's own host, so the
 // domain is never hard-coded: served at example.com, a card with sub:"roadtrip"
 // links to https://roadtrip.example.com.

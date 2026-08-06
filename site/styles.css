@@ -72,9 +72,22 @@ body {
   background: var(--bg-soft);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  /* Column flex + `margin-top:auto` on the footer keeps the footer at the
+     bottom of a short page (the landing page is only two panels tall) without
+     stretching the content above it. */
+  min-height: 100vh;
+  display: flex; flex-direction: column;
 }
 
 a { color: inherit; text-decoration: none; }
+
+/* Reachable by screen readers and heading navigation, invisible on screen —
+   for the landing page's <h1>, which the design carries in the panels. */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 
 /* ── Navbar (sticky, translucent — mirrors roadtrip) ── */
 .navbar {
@@ -114,13 +127,115 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: -0.02em; line-height: 1.1;
 }
 .hero-sub { margin-top: 12px; color: var(--text-muted); font-size: 17px; max-width: 60ch; }
+.back-link {
+  display: inline-block; margin-bottom: 14px;
+  font-family: var(--font-mono); font-size: 12.5px; color: var(--text-subtle);
+  transition: color .15s ease;
+}
+.back-link:hover { color: var(--accent); }
 
 /* ── Layout ── */
 .container { max-width: 1080px; margin: 0 auto; padding: 40px 24px 64px; }
 
+/* ── The two doors (index.html) ──
+   Left = the calendar, right = everything else. They stack below 760px, with
+   the calendar first — which is why no copy on the page says "left"/"right". */
+.split {
+  max-width: 1080px; margin: 0 auto; padding: 40px 24px 64px;
+  display: grid; gap: 22px;
+  /* minmax(0,…), not a bare 1fr: the preview rows hold long single-line text,
+     whose min-content width would otherwise blow one column out and starve the
+     other. The 0 minimum lets both halves stay honestly equal. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.split-side {
+  display: flex; flex-direction: column; gap: 12px;
+  min-height: 380px; padding: 26px 24px 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.split-side:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+}
+.split-side:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* min-height keeps the two kickers on the same line — only one side has a badge */
+.side-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 24px; }
+.side-kicker, .side-count {
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-subtle);
+}
+.side-title { font-size: clamp(21px, 2.6vw, 27px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.side-blurb { color: var(--text-muted); font-size: 15px; }
+
+/* The preview soaks up the leftover height so both CTAs sit on the same line. */
+.side-preview { flex: 1; display: flex; align-items: center; margin: 6px 0 2px; }
+.side-shot {
+  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: top;
+  background: var(--bg-soft);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+}
+
+/* Right side: a peek at the registry — the full cards live on /projects.html.
+   Top-aligned, so the list grows downward as projects are added instead of
+   drifting around the middle while there are only one or two. */
+.side-list {
+  list-style: none; width: 100%; align-self: flex-start;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.side-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+}
+.side-item-thumb {
+  width: 64px; height: 42px; flex: 0 0 auto; object-fit: cover;
+  background: var(--bg-hover); border-radius: var(--radius-sm);
+}
+/* Stand-in tile for a project with no thumbnail (or a broken one), so the
+   names in the list stay on one vertical line. */
+.side-item-thumb-empty {
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border);
+  color: var(--accent); opacity: 0.5; font-size: 15px;
+}
+.side-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.side-item-name, .side-item-blurb {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.side-item-name { font-size: 14px; font-weight: 600; }
+.side-item-blurb { font-size: 12.5px; color: var(--text-muted); }
+.side-note {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text-subtle); padding-left: 2px;
+}
+
+.side-cta {
+  margin-top: auto; display: inline-flex; align-items: center; gap: 8px;
+  color: var(--accent); font-weight: 600; font-size: 14.5px;
+}
+.side-arrow { transition: transform .15s ease; }
+.split-side:hover .side-arrow { transform: translateX(4px); }
+
+@media (max-width: 760px) {
+  /* Still minmax(0,…) — a bare 1fr here lets the preview rows push the page
+     wider than the viewport (see the note above). */
+  .split { grid-template-columns: minmax(0, 1fr); padding-top: 28px; }
+  .split-side { min-height: 0; }
+}
+
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* min(300px, 100%) so the track can shrink below 300px on a 320px-wide phone
+     instead of pushing the page into a horizontal scroll. */
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 22px;
 }
 
@@ -160,6 +275,8 @@ a { color: inherit; text-decoration: none; }
 .badge-building { color: var(--accent);  background: var(--accent-soft);    border-color: rgba(37,99,235,0.25); }
 .badge-paused   { color: var(--warning); background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.25); }
 .badge-archived { color: var(--text-subtle); background: var(--bg-hover);   border-color: var(--border); }
+/* Compact variant for the landing page's preview rows */
+.badge-sm { font-size: 10px; padding: 2px 6px; }
 
 /* ── Tags ── */
 .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -173,7 +290,7 @@ a { color: inherit; text-decoration: none; }
 .empty { text-align: center; color: var(--text-subtle); padding: 48px 0; }
 
 /* ── Footer ── */
-.site-footer { border-top: 1px solid var(--border); background: var(--bg); }
+.site-footer { margin-top: auto; border-top: 1px solid var(--border); background: var(--bg); }
 .footer-inner {
   max-width: 1080px; margin: 0 auto; padding: 24px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;

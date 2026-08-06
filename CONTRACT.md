@@ -45,16 +45,20 @@ string `web`.
    Keep the block **bare** unless your app does *not* set its own gzip/security
    headers — Caddy passes the app's responses through, and duplicating `encode`
    or headers causes double-compression / doubled headers.
-6. Add one card to [`site/projects.js`](site/projects.js):
+6. Add one entry to the `PROJECTS` array in
+   [`site/projects.js`](site/projects.js):
    ```js
    { sub: "myapp", title: "My App", blurb: "...", status: "building",
      tags: ["..."], thumbnail: "assets/myapp.png" }
    ```
-   Drop a thumbnail in `site/assets/`.
+   Drop a thumbnail in `site/assets/`. (`PROJECTS` feeds the *projects* side of
+   the landing page — the cards on `/projects.html`, plus the name preview on
+   the homepage panel. The `CALENDAR` object above it is the other side and is
+   not a project slot.)
 
 Push both repos. Wildcard DNS already resolves `myapp.<domain>`; Caddy
-auto-issues its cert on first request; the card appears on the homepage. No DNS
-change, no roadtrip involvement.
+auto-issues its cert on first request; the card appears on the projects page.
+No DNS change, no roadtrip involvement.
 
 ## Why subdomains (not paths)
 

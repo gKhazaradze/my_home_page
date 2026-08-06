@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>George — what I'm up to</title>
-<meta name="description" content="Projects I'm building and running — a home base that links out to each one." />
+<title>George — my calendar &amp; my projects</title>
 
 <!-- Social link previews -->
 <meta property="og:type" content="website" />
-<meta property="og:title" content="George — what I'm up to" />
-<meta property="og:description" content="Projects I'm building and running." />
+<meta property="og:title" content="George — my calendar &amp; my projects" />
+<meta property="og:description" content="My calendar and my projects" />
 
 <!-- Inline SVG favicon: the ▸ mark in the accent blue (no extra asset) -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='86' fill='%232563eb'%3E%E2%96%B8%3C/text%3E%3C/svg%3E" />
@@ -37,18 +36,41 @@
   </div>
 </nav>
 
-<header class="hero">
-  <div class="hero-inner">
-    <h1>What I'm up to</h1>
-    <p class="hero-sub">Things I'm building and running. Click any project to open it.</p>
-  </div>
-</header>
 
-<main class="container">
-  <section id="projects" class="project-grid">
-    <!-- cards injected by render.js from projects.js -->
-  </section>
-  <p id="empty" class="empty" hidden>Nothing here yet — check back soon.</p>
+<!-- The page's heading. The design has no visible title — the two panels carry
+     it — but the document still needs an h1 for heading navigation. -->
+<h1 class="visually-hidden">George — my calendar and my projects</h1>
+
+<!-- The two doors. Copy here is the pre-JS fallback; landing.js re-syncs it to
+     the registry in projects.js and fills in the host-derived calendar link. -->
+<main class="split">
+
+  <a class="split-side" id="side-calendar" aria-label="Open My Calendar">
+    <div class="side-top">
+      <span class="side-kicker">my time</span>
+      <span class="badge badge-live" id="calendar-status">live</span>
+    </div>
+    <h2 class="side-title" id="calendar-title">My Calendar</h2>
+    <p class="side-blurb" id="calendar-blurb">Where I'm going and when</p>
+    <div class="side-preview">
+      <img class="side-shot" id="calendar-shot" src="assets/availability.svg" alt="" loading="lazy" onerror="this.remove()">
+    </div>
+    <span class="side-cta">Check my calendar <span class="side-arrow" aria-hidden="true">→</span></span>
+  </a>
+
+  <a class="split-side" href="/projects.html" aria-label="Browse my projects">
+    <div class="side-top">
+      <span class="side-kicker">my work</span>
+      <span class="side-count" id="project-count"></span>
+    </div>
+    <h2 class="side-title">Projects</h2>
+    <p class="side-blurb">Random things I build</p>
+    <div class="side-preview">
+      <ul class="side-list" id="project-list"><!-- rows injected by landing.js --></ul>
+    </div>
+    <span class="side-cta">See what I'm building <span class="side-arrow" aria-hidden="true">→</span></span>
+  </a>
+
 </main>
 
 <footer class="site-footer">
@@ -62,7 +84,7 @@
 </footer>
 
 <script src="projects.js"></script>
-<script src="render.js"></script>
+<script src="landing.js"></script>
 <script src="theme.js"></script>
 </body>
 </html>
