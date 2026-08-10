@@ -58,18 +58,21 @@
     <span class="side-cta">Check my calendar <span class="side-arrow" aria-hidden="true">→</span></span>
   </a>
 
-  <a class="split-side" href="/projects.html" aria-label="Browse my projects">
+  <!-- Not a link itself: each preview row below is its own link straight to the
+       project, so a visitor can open one without the /projects.html detour. The
+       CTA at the bottom is the link to the full grid. -->
+  <section class="split-side split-side-plain" aria-labelledby="projects-heading">
     <div class="side-top">
       <span class="side-kicker">my work</span>
       <span class="side-count" id="project-count"></span>
     </div>
-    <h2 class="side-title">Projects</h2>
-    <p class="side-blurb">Random things I build</p>
+    <h2 class="side-title" id="projects-heading">Projects</h2>
+    <p class="side-blurb">Random things I build — click one to open it</p>
     <div class="side-preview">
       <ul class="side-list" id="project-list"><!-- rows injected by landing.js --></ul>
     </div>
-    <span class="side-cta">See what I'm building <span class="side-arrow" aria-hidden="true">→</span></span>
-  </a>
+    <a class="side-cta" href="/projects.html">See all projects <span class="side-arrow" aria-hidden="true">→</span></a>
+  </section>
 
 </main>
 

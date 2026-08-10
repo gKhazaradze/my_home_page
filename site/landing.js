@@ -6,9 +6,10 @@
 //           index.html carries the same copy statically so the panel reads
 //           before this file runs; everything here re-syncs it to the registry,
 //           which stays the single source of truth.
-//   right — a peek at PROJECTS (how many, and the first few names). The panel
-//           itself is a plain link to /projects.html, where render.js draws the
-//           full cards.
+//   right — a peek at PROJECTS (how many, and the first few names). Each row is
+//           its own link to that project's subdomain, so a visitor can open one
+//           straight from here; the CTA underneath goes to /projects.html, where
+//           render.js draws the full cards.
 //
 // Links are built from the page's own host, so no domain is hard-coded.
 
@@ -54,17 +55,23 @@
     } else {
       for (const p of projects.slice(0, PREVIEW)) list.appendChild(row(p));
       const extra = projects.length - PREVIEW;
-      if (extra > 0) list.appendChild(note(`+${extra} more`));
+      if (extra > 0) list.appendChild(note(`+${extra} more`, "/projects.html"));
     }
   }
 
-  // One preview row: thumbnail, name + blurb, status badge. Built with DOM calls
-  // rather than innerHTML, so registry text needs no escaping.
+  // One preview row: a link to the project itself — thumbnail, name + blurb,
+  // status badge. Built with DOM calls rather than innerHTML, so registry text
+  // needs no escaping.
   function row(p) {
     const li = document.createElement("li");
-    li.className = "side-item";
 
-    li.appendChild(thumb(p));
+    const link = document.createElement("a");
+    link.className = "side-item";
+    link.href = subUrl(p.sub);
+    link.setAttribute("aria-label", `Open ${p.title}`);
+    li.appendChild(link);
+
+    link.appendChild(thumb(p));
 
     const body = document.createElement("div");
     body.className = "side-item-body";
@@ -78,14 +85,22 @@
       blurb.textContent = p.blurb;
       body.appendChild(blurb);
     }
-    li.appendChild(body);
+    link.appendChild(body);
 
     if (p.status) {
       const badge = document.createElement("span");
       badge.className = `badge badge-sm badge-${p.status}`;
       badge.textContent = p.status;
-      li.appendChild(badge);
+      link.appendChild(badge);
     }
+
+    // The row's own arrow, mirroring the CTA — the affordance that says this
+    // line goes somewhere on its own.
+    const arrow = document.createElement("span");
+    arrow.className = "side-item-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "→";
+    link.appendChild(arrow);
 
     return li;
   }
@@ -111,10 +126,20 @@
     return img;
   }
 
-  function note(text) {
+  // A plain line under the rows. With an href it becomes a link (the "+N more"
+  // line points at the full grid); without one it's just a message.
+  function note(text, href) {
     const li = document.createElement("li");
     li.className = "side-note";
-    li.textContent = text;
+    if (!href) {
+      li.textContent = text;
+      return li;
+    }
+    const link = document.createElement("a");
+    link.className = "side-note-link";
+    link.href = href;
+    link.textContent = text;
+    li.appendChild(link);
     return li;
   }
 })();

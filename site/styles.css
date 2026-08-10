@@ -155,15 +155,21 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  cursor: pointer;
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
-.split-side:hover {
+/* Only the panel that *is* a link lifts and takes the pointer. The projects
+   panel (.split-side-plain) is a container whose rows link individually, so it
+   stays put — a card that rises but doesn't go anywhere reads as broken. */
+a.split-side { cursor: pointer; }
+a.split-side:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
   border-color: var(--accent);
 }
 .split-side:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* Hovering anywhere in the projects panel still warms its border, so the two
+   sides feel equally alive. */
+.split-side-plain:hover { border-color: var(--border-strong); }
 
 /* min-height keeps the two kickers on the same line — only one side has a badge */
 .side-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 24px; }
@@ -189,12 +195,30 @@ a { color: inherit; text-decoration: none; }
   list-style: none; width: 100%; align-self: flex-start;
   display: flex; flex-direction: column; gap: 8px;
 }
+/* Each row is a link to its project. */
 .side-item {
   display: flex; align-items: center; gap: 12px;
   padding: 10px 12px;
   background: var(--bg-soft);
   border: 1px solid var(--border); border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
+.side-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+.side-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Reveals on hover/focus — the row is quiet at rest, but says where it goes the
+   moment you reach for it. */
+.side-item-arrow {
+  flex: 0 0 auto; color: var(--accent); font-size: 14px;
+  opacity: 0; transform: translateX(-4px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+.side-item:hover .side-item-arrow,
+.side-item:focus-visible .side-item-arrow { opacity: 1; transform: translateX(0); }
 .side-item-thumb {
   width: 64px; height: 42px; flex: 0 0 auto; object-fit: cover;
   background: var(--bg-hover); border-radius: var(--radius-sm);
@@ -212,17 +236,28 @@ a { color: inherit; text-decoration: none; }
 }
 .side-item-name { font-size: 14px; font-weight: 600; }
 .side-item-blurb { font-size: 12.5px; color: var(--text-muted); }
+/* No hover on a touch screen — keep the arrows visible there instead. */
+@media (hover: none) {
+  .side-item-arrow { opacity: 0.55; transform: none; }
+}
+
 .side-note {
   font-family: var(--font-mono); font-size: 12px;
   color: var(--text-subtle); padding-left: 2px;
 }
+.side-note-link { transition: color .15s ease; }
+.side-note-link:hover { color: var(--accent); }
 
 .side-cta {
   margin-top: auto; display: inline-flex; align-items: center; gap: 8px;
   color: var(--accent); font-weight: 600; font-size: 14.5px;
+  align-self: flex-start; /* the CTA link is only as wide as its own text */
 }
 .side-arrow { transition: transform .15s ease; }
-.split-side:hover .side-arrow { transform: translateX(4px); }
+a.split-side:hover .side-arrow,
+.side-cta:hover .side-arrow { transform: translateX(4px); }
+.side-cta:hover { color: var(--accent-hover); }
+.side-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius-sm); }
 
 @media (max-width: 760px) {
   /* Still minmax(0,…) — a bare 1fr here lets the preview rows push the page
