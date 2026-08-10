@@ -42,6 +42,21 @@ availability.{$DOMAIN} {
 	reverse_proxy availability:8000
 }
 
+# ── Project #3: bustracker — live Tbilisi bus map ────────────────────────────
+# NOT bare, and NOT `encode` either. This one is a stdlib http.server, not Flask:
+# server.py gzips its own responses (anything over 1 KB, with Content-Encoding +
+# Vary), so adding `encode` here would double-compress — but it sets none of the
+# security headers the Flask apps set, so those go on at the edge.
+# It listens on 8765, not 8000.
+bustracker.{$DOMAIN} {
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	reverse_proxy bustracker:8765
+}
+
 # ── Template for the next project (copy, change the two names, uncomment) ─────
 # newproj.{$DOMAIN} {
 #     reverse_proxy newproj:8000

@@ -38,4 +38,12 @@ const PROJECTS = [
     // tags: ["travel", "europe", "flask"],
     thumbnail: "assets/roadtrip.png",
   },
+  {
+    sub: "bustracker",
+    title: "Tbilisi Bus Tracker",
+    blurb: "Every bus in the Tbilisi network on one live map — filter by route, and hover a bus to trace the path it runs.",
+    status: "live",
+    // tags: ["maps", "transit", "python"],
+    thumbnail: "assets/bustracker.svg",
+  },
 ];
