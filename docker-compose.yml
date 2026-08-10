@@ -25,7 +25,12 @@ services:
                                    # Encrypt) DNS lookups fail without this.
                                    # (roadtrip:8000 still resolves via 127.0.0.11.)
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Mount the DIRECTORY, not the file. A single-file bind mount is resolved
+      # by inode, and `git reset --hard` replaces the file (write temp + rename)
+      # rather than editing in place — so the container would keep reading the
+      # OLD inode and `caddy reload` would report "config is unchanged" after a
+      # deploy that looked green. A directory mount resolves per access.
+      - ./caddy:/etc/caddy:ro
       - ./site:/srv/site:ro        # homepage static files (served by file_server)
       - caddy_data:/data           # ACME account + issued certs — MUST persist
       - caddy_config:/config

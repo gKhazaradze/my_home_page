@@ -36,7 +36,7 @@ string `web`.
 
 ## Then register it on the platform (2 edits in THIS repo)
 
-5. Add one block to [`Caddyfile`](Caddyfile):
+5. Add one block to [`caddy/Caddyfile`](caddy/Caddyfile):
    ```caddyfile
    myapp.{$DOMAIN} {
        reverse_proxy myapp:8000

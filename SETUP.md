@@ -204,9 +204,25 @@ is missing for the account running `sudo git`. Re-run the provisioner, or
 `sudo git config --global --add safe.directory /srv/platform`.
 
 **A Caddyfile edit didn't take effect.** `docker compose up -d` doesn't recreate
-Caddy for a bind-mounted file change — the deploy runs
+Caddy for a config-file change — the deploy runs
 `sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile` for that. Run
 it by hand if needed.
+
+If the reload logs **`"config is unchanged"`** even though the repo file clearly
+changed, the container is reading a **stale file**. `/etc/caddy` is mounted as a
+*directory* precisely to prevent this: a single-file bind mount is resolved by
+inode, and `git reset --hard` replaces the file rather than editing it in place,
+so the old inode (and old routing table) stays live. Confirm and fix:
+
+```bash
+sudo grep -c myproj /srv/platform/caddy/Caddyfile                 # host
+sudo docker exec caddy grep -c myproj /etc/caddy/Caddyfile        # container
+# if they disagree, the mount is stale:
+cd /srv/platform && sudo docker compose up -d --force-recreate caddy
+```
+
+The deploy now asserts this automatically — a post-reload step fails the build if
+any hostname in the repo Caddyfile is missing from Caddy's running config.
 
 **Never delete the `caddy_data` volume.** It holds the ACME account + all certs;
 losing it forces re-issuance and can hit Let's Encrypt rate limits. Exclude it

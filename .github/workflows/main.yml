@@ -32,7 +32,7 @@ jobs:
           # dummies so validation can resolve them.
           docker run --rm \
             -e DOMAIN=example.com -e ACME_EMAIL=ci@example.com \
-            -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            -v "$PWD/caddy:/etc/caddy:ro" \
             caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
       - name: Validate compose file
@@ -67,9 +67,32 @@ jobs:
             sudo docker compose up -d --remove-orphans
 
             echo "--- Reloading Caddy (applies Caddyfile-only edits) ---"
-            # `up -d` alone won't pick up a bind-mounted Caddyfile change, so
+            # `up -d` alone won't restart Caddy for a config-file change, so
             # reload explicitly against the running container's admin API.
+            # This only works because /etc/caddy is a DIRECTORY mount: a
+            # single-file mount is inode-bound, and `git reset` swaps the inode,
+            # so the reload would read stale content and log "config is
+            # unchanged" while the edge kept serving the old routing table.
             sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+
+            echo "--- Verifying the running config matches the repo ---"
+            # Guard against a SILENT no-op reload. This is the failure that cost
+            # us a debugging session: the deploy went green, Caddy logged
+            # "config is unchanged", and the edge kept serving the old routing
+            # table. Assert that every project hostname in the repo Caddyfile is
+            # actually present in the config Caddy has loaded.
+            # NOTE: 127.0.0.1, not localhost — the admin API is IPv4-only and
+            # busybox wget resolves localhost to ::1 (connection refused).
+            sudo docker exec caddy wget -qO- http://127.0.0.1:2019/config/ > /tmp/live.json
+            for host in $(grep -oE '^[a-z0-9]+\.\{\$DOMAIN\}' /srv/platform/caddy/Caddyfile | cut -d. -f1); do
+              if ! grep -q "\"$host\." /tmp/live.json; then
+                echo "MISMATCH: '$host' is in the repo Caddyfile but NOT in the running config."
+                echo "The edge is serving stale routing. Recreate it:"
+                echo "  cd /srv/platform && sudo docker compose up -d --force-recreate caddy"
+                exit 1
+              fi
+            done
+            echo "Running config contains every site block in the repo"
 
             echo "--- Pruning dangling images ---"
             sudo docker image prune -f >/dev/null 2>&1 || true

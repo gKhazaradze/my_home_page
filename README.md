@@ -34,7 +34,7 @@ with its **own CI** and plugs in through the shared `web` network (see
 | Path | Purpose |
 |------|---------|
 | `docker-compose.yml` | The single `caddy` service; external `web` network; persistent cert volumes. |
-| `Caddyfile` | The whole edge routing table (apex homepage + one block per project). |
+| `caddy/Caddyfile` | The whole edge routing table (apex homepage + one block per project). Mounted as a directory so `git reset` can't leave the container on a stale inode. |
 | `.env.example` | `DOMAIN` + `ACME_EMAIL` (the real `.env` lives on the server). |
 | `site/` | The homepage: `index.html` (the two sides, drawn by `landing.js`), `projects.html` (the cards, drawn by `render.js`), `projects.js` (the registry), `styles.css`. |
 | `deploy/setup-platform.sh` | One-shot server provisioner. |
@@ -80,7 +80,7 @@ with the real domain.
 Three small edits, fully decoupled — see [CONTRACT.md](CONTRACT.md):
 
 1. In the project repo: join `web`, set a `container_name`, drop host ports.
-2. Here: one `reverse_proxy` block in `Caddyfile`.
+2. Here: one `reverse_proxy` block in `caddy/Caddyfile`.
 3. Here: one entry in the `PROJECTS` registry in `site/projects.js` (+ a
    thumbnail in `site/assets/`).
 
