@@ -46,4 +46,12 @@ const PROJECTS = [
     // tags: ["maps", "transit", "python"],
     thumbnail: "assets/bustracker.svg",
   },
+  {
+    sub: "citywatch",
+    title: "CityWatch",
+    blurb: "A wall of live public camera feeds — city centres, zoos, beaches and landmarks — each on a map, with its own local time and sun position.",
+    status: "live",
+    // tags: ["video", "maps", "react"],
+    thumbnail: "assets/citywatch.svg",
+  },
 ];

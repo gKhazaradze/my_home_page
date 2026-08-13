@@ -57,6 +57,20 @@ bustracker.{$DOMAIN} {
 	reverse_proxy bustracker:8765
 }
 
+# ── Project #4: citywatch — public live camera feeds ─────────────────────────
+# Keep this block BARE: the container is nginx serving a static Vite build, and
+# its own config already gzips (gzip on, over 1 KB, with Vary) and sets
+# Content-Security-Policy / X-Content-Type-Options / Referrer-Policy on every
+# location. Adding `encode` or headers here would double them up.
+#
+# It sets no X-Frame-Options on purpose — its CSP carries `frame-ancestors
+# 'self'`, which supersedes it. Don't "fix" that by adding the header here.
+#
+# It listens on 80 (nginx default), not 8000.
+citywatch.{$DOMAIN} {
+	reverse_proxy citywatch:80
+}
+
 # ── Template for the next project (copy, change the two names, uncomment) ─────
 # newproj.{$DOMAIN} {
 #     reverse_proxy newproj:8000
