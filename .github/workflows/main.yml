@@ -212,21 +212,34 @@ jobs:
             hosts="$hosts $sub.$domain"
           done
 
+          # Retry per host: a single dropped connection is a flaky network, not a
+          # broken deploy, and failing the whole run on one blip trains everyone
+          # to ignore this check. Only a consistent failure is a real one.
           failed=0
           for h in $hosts; do
             url="https://$h/.well-known/assetlinks.json"
-            code=$(curl -s --max-time 10 -o /tmp/al.json -w '%{http_code}' "$url")
-            if [ "$code" != "200" ]; then
-              echo "FAIL $h — HTTP $code"; failed=1; continue
+            reason=""
+            for attempt in 1 2 3 4 5; do
+              reason=""
+              code=$(curl -s --max-time 15 -o /tmp/al.json -w '%{http_code}' "$url" || echo 000)
+              if [ "$code" != "200" ]; then
+                reason="HTTP $code"
+              else
+                got=$(jq -r '.[0].target.sha256_cert_fingerprints[0] // empty' /tmp/al.json 2>/dev/null || true)
+                if [ -z "$got" ]; then
+                  reason="200 but the body is not asset-links JSON (SPA fallback?)"
+                elif [ "$got" != "$want" ]; then
+                  reason="serving a DIFFERENT signing fingerprint than this commit"
+                fi
+              fi
+              [ -z "$reason" ] && break
+              sleep 3
+            done
+            if [ -n "$reason" ]; then
+              echo "FAIL $h — $reason"; failed=1
+            else
+              echo "OK   $h"
             fi
-            got=$(jq -r '.[0].target.sha256_cert_fingerprints[0] // empty' /tmp/al.json 2>/dev/null || true)
-            if [ -z "$got" ]; then
-              echo "FAIL $h — 200 but the body is not asset-links JSON (SPA fallback?)"; failed=1; continue
-            fi
-            if [ "$got" != "$want" ]; then
-              echo "FAIL $h — serving a DIFFERENT signing fingerprint than this commit"; failed=1; continue
-            fi
-            echo "OK   $h"
           done
 
           [ "$failed" = 0 ] || {
