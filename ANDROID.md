@@ -177,12 +177,34 @@ card. Getting it *inside the app* without a URL bar takes two more edits:
 Step 1 alone is not enough: the origin will serve the file, but the app won't
 have been told to trust it.
 
-## Known rough edge
+## Verified on device
 
-Bubblewrap targets SDK 36, so on Android 15/16 the app is subject to mandatory
-edge-to-edge — web content can draw under the status and gesture bars. The site
-uses the default `viewport-fit`, which asks the browser to inset content for us.
-If the navbar ends up under the status bar on the device, the fix is
-`viewport-fit=cover` plus `env(safe-area-inset-*)` padding in `styles.css` —
-and the same fix in each project's own CSS, since they render in the same
-full-screen window.
+Installed on a Pixel 9 Pro XL (Android 16) on 2026-08-17 and checked end to end:
+
+```
+pm get-app-links com.georgelands.app
+  Signatures: [EC:C2:7D:99:…:F1:65]        <- matches the APK and all five origins
+  georgelands.com:              verified
+  roadtrip.georgelands.com:     verified
+  availability.georgelands.com: verified
+  bustracker.georgelands.com:   verified
+  citywatch.georgelands.com:    verified
+```
+
+The hub and all four projects open full-screen with no URL bar, including when
+tapping through from the hub to a project — which is the cross-origin case the
+whole `additionalTrustedOrigins` + per-origin asset-links setup exists for.
+The calendar keeps its signed-in session, because a TWA shares Chrome's cookie
+jar rather than running its own.
+
+Edge-to-edge under targetSdk 36 turned out to be a non-issue: Chrome insets the
+web content itself, so the navbar sits correctly below the status bar and no
+`viewport-fit=cover` / `env(safe-area-inset-*)` work was needed. If that ever
+regresses after a Chrome update, that pair is the fix — and it would need
+applying in each project's own CSS too, since they all render in this window.
+
+One thing deliberately left off: Android's "open supported links" selection
+state is `Disabled`, so tapping a `georgelands.com` link in another app still
+opens the browser rather than this app. Domain verification (what removes the
+URL bar) is independent of it. Turn it on under **Settings → Apps → GeorgeLands
+→ Open by default** if you want links to route into the app.
