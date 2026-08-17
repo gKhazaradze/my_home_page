@@ -81,7 +81,8 @@ export BUBBLEWRAP_KEYSTORE_PASSWORD="$(cat ~/Projects/keys/georgelands-twa.keyst
 export BUBBLEWRAP_KEY_PASSWORD="$BUBBLEWRAP_KEYSTORE_PASSWORD"
 
 cd android                    # `build` ignores --directory and runs gradle in
-bubblewrap update             # the CWD, so the cd is not optional
+                              # the CWD, so the cd is not optional
+bubblewrap update --skipVersionUpgrade
 bubblewrap build
 ```
 
@@ -89,6 +90,11 @@ bubblewrap build
 compiles and signs it. That emits `app-release-signed.apk` — and an
 `app-release-bundle.aab`, which is a Play publishing format: **ignore it**,
 `adb install` cannot install an AAB.
+
+`--skipVersionUpgrade` keeps the version exactly as `twa-manifest.json` declares
+it; without the flag `update` stops to ask interactively. To cut a new version,
+bump `appVersion` and `appVersionCode` in `twa-manifest.json` by hand and
+rebuild — the version then lives in the same reviewed file as everything else.
 
 Signing is automatic (apksigner, v1+v2+v3 — a sideloaded app targeting SDK 36
 requires v2 or later, which this satisfies). Nothing extra to run.
