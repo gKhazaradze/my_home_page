@@ -1,0 +1,49 @@
+{
+  "packageId": "com.georgelands.app",
+  "host": "georgelands.com",
+  "name": "GeorgeLands",
+  "launcherName": "GeorgeLands",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#2563EB",
+  "themeColorDark": "#0F1115",
+  "navigationColor": "#FFFFFF",
+  "navigationColorDark": "#171A21",
+  "navigationDividerColor": "#FFFFFF",
+  "navigationDividerColorDark": "#171A21",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://georgelands.com/assets/icon-512.png",
+  "maskableIconUrl": "https://georgelands.com/assets/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/Users/gkhazaradze/Projects/keys/georgelands-twa.keystore",
+    "alias": "georgelands"
+  },
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://georgelands.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://georgelands.com/",
+  "minSdkVersion": 21,
+  "additionalTrustedOrigins": [
+    "roadtrip.georgelands.com",
+    "availability.georgelands.com",
+    "bustracker.georgelands.com",
+    "citywatch.georgelands.com"
+  ],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "displayOverride": []
+}

@@ -60,24 +60,43 @@ the same value for that reason.
 
 ## Build
 
-Bubblewrap needs Node ≥ 18 and JDK 17. The `node` on `PATH` here is v14 (nvm's
-default), which fails with confusing errors, so pin Homebrew's Node. Bubblewrap
-downloads and manages its own JDK 17 and Android SDK under `~/.bubblewrap` —
-let it, because it pins build-tools 36.1.0 and the SDK at
-`~/Library/Android/sdk` only has 33.0.0 and no `sdkmanager`.
+Bubblewrap needs Node ≥ 18 and **exactly JDK 17** (it string-matches
+`JAVA_VERSION="17.0`, so 11 and 21 are both rejected). The `node` on `PATH` here
+is v14, which dies with `Cannot find module 'node:events'` — pin Homebrew's Node
+for every invocation. Installing the CLI under Node 14 / npm 6 also produces a
+silently broken dependency tree, so install under Node 24 too.
+
+Let Bubblewrap download and manage its own JDK and Android SDK under
+`~/.bubblewrap` (~425 MB, once). **Do not point it at `~/Library/Android/sdk`.**
+That SDK has a 2017-era `tools/` package, and Bubblewrap probes
+`<sdk>/tools/bin/sdkmanager` *first* — that binary throws `NoClassDefFoundError:
+javax/xml/bind/annotation/XmlSchema` on any JDK ≥ 9 and exits 0, so the failure
+is swallowed. `bubblewrap doctor` will happily call that SDK valid: it only
+checks the directory exists and contains `tools` or `bin`, never that build-tools
+36.1.0 is present or that sdkmanager runs.
 
 ```bash
 export PATH="/opt/homebrew/opt/node/bin:$PATH"
 export BUBBLEWRAP_KEYSTORE_PASSWORD="$(cat ~/Projects/keys/georgelands-twa.keystore.password)"
 export BUBBLEWRAP_KEY_PASSWORD="$BUBBLEWRAP_KEYSTORE_PASSWORD"
 
-cd android
+cd android                    # `build` ignores --directory and runs gradle in
+bubblewrap update             # the CWD, so the cd is not optional
 bubblewrap build
 ```
 
-That emits `app-release-signed.apk` (and an `app-release-bundle.aab`, which is
-a Play publishing format — **ignore it**, `adb install` cannot install it).
-Bubblewrap zipaligns and signs with v1+v2+v3 automatically; nothing else to run.
+`update` regenerates the Gradle project from `twa-manifest.json`; `build`
+compiles and signs it. That emits `app-release-signed.apk` — and an
+`app-release-bundle.aab`, which is a Play publishing format: **ignore it**,
+`adb install` cannot install an AAB.
+
+Signing is automatic (apksigner, v1+v2+v3 — a sideloaded app targeting SDK 36
+requires v2 or later, which this satisfies). Nothing extra to run.
+
+Expect a Gradle warning that AGP 8.9.1 "was tested up to compileSdk 35". The
+template pins AGP 8.9.1 with compileSdk 36, so it is emitted on every build.
+It is a warning, not a failure — don't chase it, and don't fix it by editing
+generated files.
 
 `bubblewrap build` regenerates the Gradle project from `twa-manifest.json` and
 **overwrites** `strings.xml` / `AndroidManifest.xml`. Edit `twa-manifest.json`
@@ -132,9 +151,12 @@ adb shell pm set-app-links --package com.georgelands.app 0 all
 adb shell pm verify-app-links --re-verify com.georgelands.app
 ```
 
-Chrome caches results per package+origin, so after fixing `assetlinks.json`
-reinstall the APK (or `adb shell pm clear com.android.chrome`, which signs you
-out of Chrome) before concluding it's still broken.
+Chrome does **not** keep a sticky cache of a *failed* verification — it re-fetches
+`assetlinks.json` over the network and only consults its stored result when the
+device is offline. So don't burn time on `pm clear com.android.chrome`. If a
+subdomain still shows a URL bar after the file is provably correct, the real
+suspects are Chrome's ordinary HTTP cache for that URL and a TWA activity you
+haven't actually restarted.
 
 ## Adding a project to the app
 
