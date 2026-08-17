@@ -25,6 +25,47 @@ jobs:
           node -c site/projects.js
           node -c site/render.js
           node -c site/landing.js
+          node -c site/theme.js
+          # A broken service worker is worse than none: the installed Android
+          # app keeps running the last GOOD worker, so a syntax error here ships
+          # silently and only shows up as a stale app days later.
+          node -c site/sw.js
+          node -c site/pwa.js
+
+      - name: Validate app manifest + asset links
+        run: |
+          # The Android app (android/) is generated from these two files. Both
+          # are hand-edited JSON with no build step, so a stray comma would
+          # otherwise only surface as a failed install on the phone.
+          jq -e . site/manifest.webmanifest > /dev/null
+
+          # Chrome will not drop the URL bar unless assetlinks.json names the
+          # exact package + signing fingerprint the APK was built with.
+          jq -e '
+            type == "array" and length > 0
+            and (.[0].relation | index("delegate_permission/common.handle_all_urls"))
+            and .[0].target.namespace == "android_app"
+            and (.[0].target.package_name | length > 0)
+            and (.[0].target.sha256_cert_fingerprints
+                 | length > 0 and all(test("^([0-9A-F]{2}:){31}[0-9A-F]{2}$")))
+          ' site/.well-known/assetlinks.json > /dev/null
+
+          # Every project subdomain is its own origin and needs the file served
+          # on it, which is what `import assetlinks` does. A project block that
+          # forgets it still works in a browser but opens with a URL bar in the
+          # app — easy to miss, so fail the build instead.
+          missing=0
+          while read -r host; do
+            [ "$host" = "www" ] && continue
+            awk -v h="$host" '
+              $0 ~ "^"h"\\.\\{\\$DOMAIN\\} \\{" { inblock = 1 }
+              inblock && /import assetlinks/    { found = 1 }
+              inblock && /^\}/                  { exit }
+              END { exit !found }
+            ' caddy/Caddyfile || { echo "MISSING 'import assetlinks' in block: $host"; missing=1; }
+          done < <(grep -oE '^[a-z0-9]+\.\{\$DOMAIN\}' caddy/Caddyfile | cut -d. -f1)
+          [ "$missing" = 0 ] || exit 1
+          echo "manifest + asset links OK; every project block imports assetlinks"
 
       - name: Validate Caddyfile
         run: |

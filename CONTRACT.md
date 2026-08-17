@@ -39,12 +39,26 @@ string `web`.
 5. Add one block to [`caddy/Caddyfile`](caddy/Caddyfile):
    ```caddyfile
    myapp.{$DOMAIN} {
+       import assetlinks
        reverse_proxy myapp:8000
    }
    ```
-   Keep the block **bare** unless your app does *not* set its own gzip/security
-   headers — Caddy passes the app's responses through, and duplicating `encode`
-   or headers causes double-compression / doubled headers.
+   Keep the block **bare** apart from that import, unless your app does *not*
+   set its own gzip/security headers — Caddy passes the app's responses through,
+   and duplicating `encode` or headers causes double-compression / doubled
+   headers.
+
+   `import assetlinks` is not optional. The platform ships an **Android app**
+   (a Trusted Web Activity — see [`android/`](android/)) that opens the hub
+   full-screen with no browser URL bar. Chrome only grants that to an origin
+   that serves `/.well-known/assetlinks.json` naming the app, and **every
+   subdomain is its own origin**. The import makes the edge serve that one file
+   on your behalf, so your app needs no change and never has to know the
+   Android app exists. Leave the import out and your project still works
+   perfectly in a browser — it just opens with a URL bar inside the app.
+
+   Everything except that single path still reaches your container untouched,
+   `/.well-known/` included.
 6. Add one entry to the `PROJECTS` array in
    [`site/projects.js`](site/projects.js):
    ```js

@@ -36,10 +36,13 @@ with its **own CI** and plugs in through the shared `web` network (see
 | `docker-compose.yml` | The single `caddy` service; external `web` network; persistent cert volumes. |
 | `caddy/Caddyfile` | The whole edge routing table (apex homepage + one block per project). Mounted as a directory so `git reset` can't leave the container on a stale inode. |
 | `.env.example` | `DOMAIN` + `ACME_EMAIL` (the real `.env` lives on the server). |
-| `site/` | The homepage: `index.html` (the two sides, drawn by `landing.js`), `projects.html` (the cards, drawn by `render.js`), `projects.js` (the registry), `styles.css`. |
+| `site/` | The homepage: `index.html` (the two sides, drawn by `landing.js`), `projects.html` (the cards, drawn by `render.js`), `projects.js` (the registry), `styles.css`. Also the PWA layer — `manifest.webmanifest`, `sw.js`, `pwa.js`, `.well-known/assetlinks.json`. |
+| `android/` | The Android app: a Trusted Web Activity wrapping the hub. `twa-manifest.json` is the definition; the Gradle project is generated. See [ANDROID.md](ANDROID.md). |
+| `tools/make-icons.sh` | Regenerates the app icons in `site/assets/` from the ▸ mark (rasterized with headless Chrome). |
 | `deploy/setup-platform.sh` | One-shot server provisioner. |
 | `.github/workflows/main.yml` | CI: validate → SSH deploy → `caddy reload` → health check. |
 | `CONTRACT.md` | How a project joins the platform. |
+| `ANDROID.md` | Building, signing and installing the Android app. |
 | `SETUP.md` | First-time provisioning, the live-box migration runbook, CI secrets. |
 
 ## Run locally

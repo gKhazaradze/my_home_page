@@ -13,6 +13,31 @@
 	email {$ACME_EMAIL}
 }
 
+# ── Shared: Digital Asset Links ──────────────────────────────────────────────
+# The Android app (a Trusted Web Activity — see android/) is only allowed to
+# show a site full-screen, with no browser URL bar, if that site's ORIGIN serves
+# /.well-known/assetlinks.json naming the app's package and signing fingerprint.
+#
+# Every project subdomain is a separate origin, so every one of them needs that
+# file — but the projects live in their own repos and none of them should have
+# to know the app exists. So the edge answers for them: this snippet serves the
+# platform's single copy from /srv/site, and everything else still reaches the
+# project container untouched.
+#
+# `handle` sorts before `reverse_proxy` in Caddy's directive order, so a request
+# for any OTHER path falls straight through to the proxy below it — which is why
+# each project block stays bare. Verified end to end: the upstream still sees the
+# original path and Host, and bustracker's header block still applies to both.
+#
+# The apex needs no import — it already serves /srv/site with file_server, and
+# Caddy's file_server does serve dot-directories.
+(assetlinks) {
+	handle /.well-known/assetlinks.json {
+		root * /srv/site
+		file_server
+	}
+}
+
 # ── Apex: the homepage hub, served straight off disk (no homepage container) ──
 {$DOMAIN} {
 	root * /srv/site
@@ -31,6 +56,7 @@ www.{$DOMAIN} {
 # headers here would double-compress and emit doubled headers. Caddy passes the
 # app's responses straight through.
 roadtrip.{$DOMAIN} {
+	import assetlinks
 	reverse_proxy roadtrip:8000
 }
 
@@ -39,6 +65,7 @@ roadtrip.{$DOMAIN} {
 # X-Content-Type-Options / X-Frame-Options / Referrer-Policy (and no-store on
 # /api/*). Adding `encode` or headers here would double them up.
 availability.{$DOMAIN} {
+	import assetlinks
 	reverse_proxy availability:8000
 }
 
@@ -54,6 +81,7 @@ bustracker.{$DOMAIN} {
 		X-Frame-Options DENY
 		Referrer-Policy strict-origin-when-cross-origin
 	}
+	import assetlinks
 	reverse_proxy bustracker:8765
 }
 
@@ -68,10 +96,14 @@ bustracker.{$DOMAIN} {
 #
 # It listens on 80 (nginx default), not 8000.
 citywatch.{$DOMAIN} {
+	import assetlinks
 	reverse_proxy citywatch:80
 }
 
 # ── Template for the next project (copy, change the two names, uncomment) ─────
+# The `import assetlinks` line is part of the template: without it that project
+# opens with a URL bar inside the Android app. See CONTRACT.md.
 # newproj.{$DOMAIN} {
+#     import assetlinks
 #     reverse_proxy newproj:8000
 # }
