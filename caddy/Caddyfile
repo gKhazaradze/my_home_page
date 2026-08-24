@@ -38,6 +38,25 @@
 	}
 }
 
+# ── Shared: edge auth for PRIVATE apps ───────────────────────────────────────
+# Any project meant for me only adds `import private` to its block; public
+# projects simply don't. One credential guards them all — to rotate it, run
+#   docker run --rm caddy:2-alpine caddy hash-password
+# and replace the hash below. Browsers cache Basic credentials per subdomain,
+# so each private app asks once per device, then never again.
+#
+# /.well-known/assetlinks.json is excluded on purpose: Chrome fetches it with
+# NO credentials when the Android TWA verifies the origin, so putting it behind
+# auth would silently break full-screen mode for every private app. basic_auth
+# sorts BEFORE handle in Caddy's directive order, which is why the exclusion
+# must live here as a matcher rather than relying on the assetlinks handle.
+(private) {
+	@needs_auth not path /.well-known/assetlinks.json
+	basic_auth @needs_auth {
+		george $2a$14$3Wm148JHMqkWnzoi6kF.L.DypoW9vm1mq0j6/uwqChpjIpo.6A7mW
+	}
+}
+
 # ── Apex: the homepage hub, served straight off disk (no homepage container) ──
 {$DOMAIN} {
 	root * /srv/site
@@ -98,6 +117,26 @@ bustracker.{$DOMAIN} {
 citywatch.{$DOMAIN} {
 	import assetlinks
 	reverse_proxy citywatch:80
+}
+
+# ── Project #5: flights — airport-pickup flight tracker ──────────────────────
+# NOT bare, and NOT `encode` either. Like bustracker this is a stdlib
+# http.server: server.py gzips its own responses (over 1 KB, with
+# Content-Encoding + Vary), so adding `encode` here would double-compress —
+# but it sets none of the security headers the Flask apps set, so those go on
+# at the edge. It listens on 8766, not 8000.
+#
+# PRIVATE: personal app — `import private` puts the whole subdomain behind the
+# shared edge basic_auth (assetlinks excluded inside the snippet).
+flights.{$DOMAIN} {
+	import private
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	import assetlinks
+	reverse_proxy flights:8766
 }
 
 # ── Template for the next project (copy, change the two names, uncomment) ─────

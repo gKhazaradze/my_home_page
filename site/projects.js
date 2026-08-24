@@ -47,6 +47,14 @@ const PROJECTS = [
     thumbnail: "assets/bustracker.svg",
   },
   {
+    sub: "flights",
+    title: "Flight Tracker",
+    blurb: "Meeting someone at the airport? Track their flight by its code — live arrival countdown, with phone reminders 3, 2 and 1 hours before landing.",
+    status: "live",
+    // tags: ["travel", "notifications", "python"],
+    thumbnail: "assets/flights.svg",
+  },
+  {
     sub: "citywatch",
     title: "CityWatch",
     blurb: "A wall of live public camera feeds — city centres, zoos, beaches and landmarks — each on a map, with its own local time and sun position.",
