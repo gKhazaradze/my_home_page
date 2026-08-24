@@ -40,7 +40,8 @@
     "roadtrip.georgelands.com",
     "availability.georgelands.com",
     "bustracker.georgelands.com",
-    "citywatch.georgelands.com"
+    "citywatch.georgelands.com",
+    "flights.georgelands.com"
   ],
   "retainedBundles": [],
   "protocolHandlers": [],

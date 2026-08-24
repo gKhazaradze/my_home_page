@@ -14,7 +14,7 @@ which is what `/.well-known/assetlinks.json` does.
 
 The hub lives on the apex, but every project lives on its own subdomain — and a
 subdomain is a **separate origin**. Chrome checks trust per origin, so the app
-needs all five to line up:
+needs all six to line up:
 
 | Origin | Trusted because |
 |--------|-----------------|
@@ -23,9 +23,10 @@ needs all five to line up:
 | `availability.georgelands.com` | listed in `additionalTrustedOrigins` |
 | `bustracker.georgelands.com` | listed in `additionalTrustedOrigins` |
 | `citywatch.georgelands.com` | listed in `additionalTrustedOrigins` |
+| `flights.georgelands.com` | listed in `additionalTrustedOrigins` |
 
-and **each of those five origins must serve the identical
-`/.well-known/assetlinks.json`**. The edge does that for all five from one file
+and **each of those six origins must serve the identical
+`/.well-known/assetlinks.json`**. The edge does that for all six from one file
 (`site/.well-known/assetlinks.json`) — see the `(assetlinks)` snippet in
 `caddy/Caddyfile`. Projects never touch it.
 
@@ -183,7 +184,7 @@ Installed on a Pixel 9 Pro XL (Android 16) on 2026-08-17 and checked end to end:
 
 ```
 pm get-app-links com.georgelands.app
-  Signatures: [EC:C2:7D:99:…:F1:65]        <- matches the APK and all five origins
+  Signatures: [EC:C2:7D:99:…:F1:65]        <- matches the APK and all six origins
   georgelands.com:              verified
   roadtrip.georgelands.com:     verified
   availability.georgelands.com: verified
