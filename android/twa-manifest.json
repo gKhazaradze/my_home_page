@@ -21,8 +21,8 @@
     "path": "/Users/gkhazaradze/Projects/keys/georgelands-twa.keystore",
     "alias": "georgelands"
   },
-  "appVersion": "1.0.0",
-  "appVersionCode": 1,
+  "appVersion": "1.1.0",
+  "appVersionCode": 2,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://georgelands.com/manifest.webmanifest",

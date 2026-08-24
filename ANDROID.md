@@ -181,21 +181,31 @@ have been told to trust it.
 
 ## Verified on device
 
-Installed on a Pixel 9 Pro XL (Android 16) on 2026-08-17 and checked end to end:
+Installed on a Pixel 9 Pro XL (Android 16) — first on 2026-08-17, and again on
+2026-08-24 as v1.1.0 (versionCode 2) once `speed` joined:
 
 ```
-pm get-app-links com.georgelands.app
-  Signatures: [EC:C2:7D:99:…:F1:65]        <- matches the APK and all six origins
+pm get-app-links --user cur com.georgelands.app
+  Signatures: [EC:C2:7D:99:…:F1:65]        <- matches the APK and all seven origins
   georgelands.com:              verified
   roadtrip.georgelands.com:     verified
   availability.georgelands.com: verified
   bustracker.georgelands.com:   verified
   citywatch.georgelands.com:    verified
+  flights.georgelands.com:      verified
+  speed.georgelands.com:        verified
 ```
 
-The hub and all four projects open full-screen with no URL bar, including when
+The hub and every project open full-screen with no URL bar, including when
 tapping through from the hub to a project — which is the cross-origin case the
 whole `additionalTrustedOrigins` + per-origin asset-links setup exists for.
+
+A rebuild is what carries a new origin onto the phone: registering it in the
+Caddyfile and `twa-manifest.json` only makes the *repo* consistent, and CI
+checks exactly that much. Until you run `bubblewrap update && bubblewrap build`
+and reinstall, the installed APK still has the old origin list and that one
+subdomain opens in a Custom Tab. Bump `appVersionCode` when you do, so
+`dumpsys package` tells you which build is actually on the device.
 The calendar keeps its signed-in session, because a TWA shares Chrome's cookie
 jar rather than running its own.
 
