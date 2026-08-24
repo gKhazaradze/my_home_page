@@ -32,7 +32,6 @@ services:
       # deploy that looked green. A directory mount resolves per access.
       - ./caddy:/etc/caddy:ro
       - ./site:/srv/site:ro        # homepage static files (served by file_server)
-      - ./speed:/srv/speed:ro      # speed tracker: static PWA, no container of its own
       - caddy_data:/data           # ACME account + issued certs — MUST persist
       - caddy_config:/config
     networks: [web]
