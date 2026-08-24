@@ -14,7 +14,7 @@ which is what `/.well-known/assetlinks.json` does.
 
 The hub lives on the apex, but every project lives on its own subdomain — and a
 subdomain is a **separate origin**. Chrome checks trust per origin, so the app
-needs all six to line up:
+needs all seven to line up:
 
 | Origin | Trusted because |
 |--------|-----------------|
@@ -24,9 +24,10 @@ needs all six to line up:
 | `bustracker.georgelands.com` | listed in `additionalTrustedOrigins` |
 | `citywatch.georgelands.com` | listed in `additionalTrustedOrigins` |
 | `flights.georgelands.com` | listed in `additionalTrustedOrigins` |
+| `speed.georgelands.com` | listed in `additionalTrustedOrigins` |
 
-and **each of those six origins must serve the identical
-`/.well-known/assetlinks.json`**. The edge does that for all six from one file
+and **each of those seven origins must serve the identical
+`/.well-known/assetlinks.json`**. The edge does that for all seven from one file
 (`site/.well-known/assetlinks.json`) — see the `(assetlinks)` snippet in
 `caddy/Caddyfile`. Projects never touch it.
 

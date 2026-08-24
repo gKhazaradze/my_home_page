@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-label="Speed tracker">
+  <defs>
+    <linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4f6fa"/>
+      <stop offset="1" stop-color="#e7ecf3"/>
+    </linearGradient>
+    <linearGradient id="sphone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#161b26"/>
+      <stop offset="1" stop-color="#0b0d12"/>
+    </linearGradient>
+    <linearGradient id="sarc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#35e08a"/>
+      <stop offset="1" stop-color="#25c8a0"/>
+    </linearGradient>
+    <filter id="sshadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#1f2937" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#sbg)"/>
+
+  <!-- motion streaks behind the phone -->
+  <g stroke="#c3ccdb" stroke-linecap="round" fill="none">
+    <path d="M120 250 H360" stroke-width="14" opacity=".55"/>
+    <path d="M80 320 H300" stroke-width="14" opacity=".40"/>
+    <path d="M150 390 H340" stroke-width="14" opacity=".28"/>
+    <path d="M920 300 H1180" stroke-width="14" opacity=".55"/>
+    <path d="M980 370 H1200" stroke-width="14" opacity=".40"/>
+    <path d="M940 440 H1140" stroke-width="14" opacity=".28"/>
+  </g>
+
+  <!-- phone -->
+  <g filter="url(#sshadow)">
+    <rect x="452" y="76" width="376" height="568" rx="46" fill="url(#sphone)"/>
+    <rect x="452" y="76" width="376" height="568" rx="46" fill="none" stroke="#2b3346" stroke-width="2"/>
+  </g>
+
+  <text x="500" y="140" font-family="-apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="19" font-weight="600" letter-spacing="2.4" fill="#8a93a8">SPEED TRACKER</text>
+
+  <!-- gauge: 220° sweep, ~72% lit -->
+  <g transform="translate(640 322)" fill="none" stroke-linecap="round" stroke-width="26">
+    <path d="M-118 68 A 136 136 0 1 1 118 68" stroke="#262d3d"/>
+    <path d="M-118 68 A 136 136 0 0 1 112 -78" stroke="url(#sarc)"/>
+  </g>
+
+  <text x="640" y="322" text-anchor="middle" font-family="-apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="84" font-weight="700" letter-spacing="-3" fill="#eef2fb">50</text>
+  <text x="640" y="360" text-anchor="middle" font-family="-apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="20" letter-spacing="3" fill="#8a93a8">KM/H</text>
+
+  <!-- average speed panel -->
+  <rect x="492" y="418" width="296" height="96" rx="18" fill="#141822" stroke="#262d3d" stroke-width="2"/>
+  <text x="640" y="450" text-anchor="middle" font-family="-apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="16" letter-spacing="2.4" fill="#8a93a8">AVERAGE SPEED</text>
+  <text x="640" y="497" text-anchor="middle" font-family="-apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="42" font-weight="700" fill="#eef2fb">41.6 <tspan font-size="20" font-weight="500" fill="#8a93a8">km/h</tspan></text>
+
+  <!-- stat chips -->
+  <g font-family="-apple-system, Segoe UI, Roboto, sans-serif" text-anchor="middle">
+    <rect x="492" y="528" width="92" height="62" rx="13" fill="#141822" stroke="#262d3d" stroke-width="2"/>
+    <text x="538" y="552" font-size="13" letter-spacing="1" fill="#8a93a8">MAX</text>
+    <text x="538" y="576" font-size="21" font-weight="600" fill="#eef2fb">50.0</text>
+
+    <rect x="594" y="528" width="92" height="62" rx="13" fill="#141822" stroke="#262d3d" stroke-width="2"/>
+    <text x="640" y="552" font-size="13" letter-spacing="1" fill="#8a93a8">DIST</text>
+    <text x="640" y="576" font-size="21" font-weight="600" fill="#eef2fb">1.38</text>
+
+    <rect x="696" y="528" width="92" height="62" rx="13" fill="#141822" stroke="#262d3d" stroke-width="2"/>
+    <text x="742" y="552" font-size="13" letter-spacing="1" fill="#8a93a8">TIME</text>
+    <text x="742" y="576" font-size="21" font-weight="600" fill="#eef2fb">01:59</text>
+  </g>
+
+  <!-- record button -->
+  <rect x="492" y="602" width="296" height="26" rx="13" fill="#2a1418" stroke="#5c2b31" stroke-width="2"/>
+  <circle cx="600" cy="615" r="6" fill="#ff5c5c"/>
+  <text x="628" y="621" font-family="-apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="15" font-weight="600" fill="#eef2fb">Stop recording</text>
+</svg>

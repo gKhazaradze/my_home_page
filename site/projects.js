@@ -62,4 +62,12 @@ const PROJECTS = [
     // tags: ["video", "maps", "react"],
     thumbnail: "assets/citywatch.svg",
   },
+  {
+    sub: "speed",
+    title: "Speed Tracker",
+    blurb: "One button: toggle it on and it records your speed from GPS, toggle it off and it saves the run \u2014 average, moving average, top speed and distance.",
+    status: "live",
+    // tags: ["gps", "pwa", "vanilla-js"],
+    thumbnail: "assets/speed.svg",
+  },
 ];

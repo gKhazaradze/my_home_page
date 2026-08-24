@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Speed Tracker</title>
+<meta name="theme-color" content="#0b0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Speed">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main id="app">
+
+  <header class="topbar">
+    <h1>Speed Tracker</h1>
+    <button id="unitBtn" class="unit" type="button" aria-label="Toggle units">km/h</button>
+  </header>
+
+  <section class="dial" aria-live="polite">
+    <svg class="gauge" viewBox="0 0 200 120" aria-hidden="true">
+      <path class="gauge-track" d="M14 112 A 86 86 0 0 1 186 112" />
+      <path id="gaugeFill" class="gauge-fill" d="M14 112 A 86 86 0 0 1 186 112" />
+    </svg>
+    <div class="readout">
+      <div id="speedNow" class="speed-now">0.0</div>
+      <div id="speedUnit" class="speed-unit">km/h</div>
+    </div>
+    <div id="status" class="status">Idle</div>
+  </section>
+
+  <section class="primary">
+    <div class="primary-label">Average speed</div>
+    <div class="primary-value"><span id="avgSpeed">0.0</span><span id="avgUnit" class="suffix">km/h</span></div>
+  </section>
+
+  <section class="grid">
+    <div class="stat"><span class="k">Moving avg</span><span class="v" id="movingAvg">0.0</span></div>
+    <div class="stat"><span class="k">Max</span><span class="v" id="maxSpeed">0.0</span></div>
+    <div class="stat"><span class="k">Distance</span><span class="v" id="distance">0.00</span></div>
+    <div class="stat"><span class="k">Duration</span><span class="v" id="duration">00:00</span></div>
+    <div class="stat"><span class="k">Moving time</span><span class="v" id="movingTime">00:00</span></div>
+    <div class="stat"><span class="k">Accuracy</span><span class="v" id="accuracy">—</span></div>
+  </section>
+
+  <button id="toggle" class="toggle" type="button" aria-pressed="false">
+    <span class="toggle-dot"></span>
+    <span id="toggleText">Start recording</span>
+  </button>
+
+  <p id="hint" class="hint">Tap start and allow location access. Keep the screen on for best results.</p>
+
+  <section class="history" id="historyWrap" hidden>
+    <div class="history-head">
+      <h2>Sessions</h2>
+      <button id="clearBtn" class="link" type="button">Clear all</button>
+    </div>
+    <ul id="historyList" class="history-list"></ul>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
