@@ -39,6 +39,14 @@ const PROJECTS = [
     thumbnail: "assets/roadtrip.png",
   },
   {
+    sub: "citywatch",
+    title: "CityWatch",
+    blurb: "A wall of live public camera feeds — city centres, zoos, beaches and landmarks — each on a map, with its own local time and sun position.",
+    status: "live",
+    // tags: ["video", "maps", "react"],
+    thumbnail: "assets/citywatch.svg",
+  },
+  {
     sub: "bustracker",
     title: "Tbilisi Bus Tracker",
     blurb: "Every bus in the Tbilisi network on one live map — filter by route, and hover a bus to trace the path it runs.",
@@ -53,14 +61,6 @@ const PROJECTS = [
     status: "live",
     // tags: ["travel", "notifications", "python"],
     thumbnail: "assets/flights.svg",
-  },
-  {
-    sub: "citywatch",
-    title: "CityWatch",
-    blurb: "A wall of live public camera feeds — city centres, zoos, beaches and landmarks — each on a map, with its own local time and sun position.",
-    status: "live",
-    // tags: ["video", "maps", "react"],
-    thumbnail: "assets/citywatch.svg",
   },
   {
     sub: "speed",
