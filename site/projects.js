@@ -33,7 +33,7 @@ const PROJECTS = [
   {
     sub: "roadtrip",
     title: "Tbilisi → Portimão Roadtrip",
-    blurb: "A 16-day driving expedition across seven countries, with an interactive route map and a shared passenger roster.",
+    blurb: "A 17-day driving expedition across seven countries, with an interactive route map and a shared passenger roster.",
     status: "live",
     // tags: ["travel", "europe", "flask"],
     thumbnail: "assets/roadtrip.png",
