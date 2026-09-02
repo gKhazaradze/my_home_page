@@ -63,6 +63,14 @@ const PROJECTS = [
     thumbnail: "assets/flights.svg",
   },
   {
+    sub: "oktopus",
+    title: "Class Picker",
+    blurb: "Pick gym classes off the timetable and they book themselves \u2014 the instant the 26-hour window opens, before the good slots go.",
+    status: "live",
+    // tags: ["automation", "python", "vanilla-js"],
+    thumbnail: "assets/oktopus.svg",
+  },
+  {
     sub: "speed",
     title: "Speed Tracker",
     blurb: "One button: toggle it on and it records your speed from GPS, toggle it off and it saves the run \u2014 average, moving average, top speed and distance.",

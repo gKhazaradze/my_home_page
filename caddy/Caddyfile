@@ -160,6 +160,34 @@ speed.{$DOMAIN} {
 	reverse_proxy speed:8767
 }
 
+# ── Project #7: oktopus — gym class picker + auto-booker ─────────────────────
+# NOT bare. Like bustracker and flights this is a stdlib http.server, so it sets
+# none of the security headers the Flask apps set and those go on here. UNLIKE
+# those two it does NOT gzip itself, so `encode` belongs at the edge — adding it
+# is correct here and would be double-compression over there. Don't copy this
+# block's `encode` line into theirs.
+#
+# The upstream name is `oktopus-booker`, NOT `oktopus`: the container is the
+# booking WORKER that predates this subdomain, and the picker is a thread inside
+# it (it shares the booker's cached JWT rather than logging in twice). Caddy
+# routes by container name, so the mismatch with the subdomain is deliberate.
+#
+# It listens on 8768, not 8000.
+#
+# PRIVATE: personal app, and every click books a class on my membership —
+# `import private` puts the whole subdomain behind the shared edge basic_auth.
+oktopus.{$DOMAIN} {
+	import private
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	import assetlinks
+	encode zstd gzip
+	reverse_proxy oktopus-booker:8768
+}
+
 # ── Template for the next project (copy, change the two names, uncomment) ─────
 # The `import assetlinks` line is part of the template: without it that project
 # opens with a URL bar inside the Android app. See CONTRACT.md.
