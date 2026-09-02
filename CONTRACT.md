@@ -34,7 +34,7 @@ string `web`.
 > Add a `docker network inspect web >/dev/null 2>&1 || docker network create web`
 > guard to your project's CI so a missing network can't red-fail a deploy.
 
-## Then register it on the platform (2 edits in THIS repo)
+## Then register it on the platform (3 edits in THIS repo)
 
 5. Add one block to [`caddy/Caddyfile`](caddy/Caddyfile):
    ```caddyfile
@@ -59,7 +59,23 @@ string `web`.
 
    Everything except that single path still reaches your container untouched,
    `/.well-known/` included.
-6. Add one entry to the `PROJECTS` array in
+6. Add the subdomain to `additionalTrustedOrigins` in
+   [`android/twa-manifest.json`](android/twa-manifest.json):
+   ```json
+   "additionalTrustedOrigins": ["...", "myapp.<domain>"]
+   ```
+   **Easy to miss, and CI fails the deploy if you do** — the *Validate app
+   manifest + asset links* step diffs the Caddyfile's subdomains against this
+   list and exits 1 when they disagree, so a forgotten entry blocks the edge
+   from shipping at all (the symptom is a TLS error on the new subdomain,
+   because Caddy never learned the route and so never got a cert).
+
+   Two files have to agree because serving `assetlinks.json` at the edge is
+   necessary but not sufficient: Chrome only opens the origin full-screen if the
+   **app** also declares it trusted. Entries must be **bare hostnames** —
+   a `https://myapp...` entry yields a first label of `https://myapp`, which
+   won't match and fails the same check.
+7. Add one entry to the `PROJECTS` array in
    [`site/projects.js`](site/projects.js):
    ```js
    { sub: "myapp", title: "My App", blurb: "...", status: "building",
@@ -73,6 +89,11 @@ string `web`.
 Push both repos. Wildcard DNS already resolves `myapp.<domain>`; Caddy
 auto-issues its cert on first request; the card appears on the projects page.
 No DNS change, no roadtrip involvement.
+
+If the new subdomain gives a TLS/connection error rather than a page, check the
+platform's CI run first: a failed validation step means the edge never deployed,
+so Caddy has no route and no certificate for that host. The project's own
+container being green tells you nothing about that half.
 
 ## Why subdomains (not paths)
 

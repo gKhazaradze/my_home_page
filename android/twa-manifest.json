@@ -42,7 +42,8 @@
     "bustracker.georgelands.com",
     "citywatch.georgelands.com",
     "flights.georgelands.com",
-    "speed.georgelands.com"
+    "speed.georgelands.com",
+    "oktopus.georgelands.com"
   ],
   "retainedBundles": [],
   "protocolHandlers": [],
