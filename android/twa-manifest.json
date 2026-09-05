@@ -43,7 +43,8 @@
     "citywatch.georgelands.com",
     "flights.georgelands.com",
     "speed.georgelands.com",
-    "oktopus.georgelands.com"
+    "oktopus.georgelands.com",
+    "liftmap-api.georgelands.com"
   ],
   "retainedBundles": [],
   "protocolHandlers": [],

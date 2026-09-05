@@ -195,3 +195,15 @@ oktopus.{$DOMAIN} {
 #     import assetlinks
 #     reverse_proxy newproj:8000
 # }
+
+# ── Project #8: liftmap-api — PocketBase backend for the LiftMap app ─────────
+# Only the Dashboard (/_/) is behind basic_auth; /api/* and the public pages are
+# open (the app talks to /api/ with a user token). Repo: gKhazaradze/liftmap-api.
+liftmap-api.{$DOMAIN} {
+	import assetlinks
+	@dash path /_ /_/*
+	basic_auth @dash {
+		george $2a$14$3Wm148JHMqkWnzoi6kF.L.DypoW9vm1mq0j6/uwqChpjIpo.6A7mW
+	}
+	reverse_proxy liftmap-api:8080
+}
