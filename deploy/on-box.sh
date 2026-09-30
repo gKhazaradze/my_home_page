@@ -30,7 +30,15 @@ echo "--- Reloading Caddy (applies Caddyfile-only edits) ---"
 # single-file mount is inode-bound, and `git reset` swaps the inode,
 # so the reload would read stale content and log "config is
 # unchanged" while the edge kept serving the old routing table.
-docker exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+# When `up -d` has just (re)created the container, Caddy is still starting:
+# wait for its admin API first, or the reload races it and fails with
+# "connection refused" on :2019 (the first hardened deploy, 2026-09-30).
+# 127.0.0.1 for the same reason as below: the admin API is IPv4-only.
+for i in $(seq 1 30); do
+  docker exec caddy wget -qO- http://127.0.0.1:2019/config/ >/dev/null 2>&1 && break
+  sleep 0.5
+done
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile --address 127.0.0.1:2019
 
 echo "--- Verifying the running config matches the repo ---"
 # Guard against a SILENT no-op reload. This is the failure that cost
