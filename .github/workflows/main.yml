@@ -60,16 +60,28 @@ jobs:
           # `bus-tracker.{$DOMAIN}` block is one copy-paste away. Without the
           # hyphen the host simply doesn't match and the block is skipped
           # SILENTLY — the check passes while the project is unprotected.
+          #
+          # `import hsts` is checked the same way, in EVERY site block including
+          # the apex and www (security fix plan 5.11): a block without it would
+          # quietly serve that host without HSTS.
           missing=0
-          while read -r host; do
-            [ "$host" = "www" ] && continue
-            awk -v h="$host" '
-              $0 ~ "^"h"\\.\\{\\$DOMAIN\\} \\{" { inblock = 1 }
-              inblock && /import assetlinks/    { found = 1 }
-              inblock && /^\}/                  { exit }
+          has_import() {   # <host label, or "" for the apex> <import name>
+            # The regex is built INSIDE awk: `-v` values go through awk's escape
+            # processing, which would strip the backslashes out of `\.` and `\{`.
+            awk -v h="$1" -v imp="$2" '
+              BEGIN { head = (h == "" ? "^" : "^" h "\\.") "\\{\\$DOMAIN\\} \\{" }
+              $0 ~ head                           { inblock = 1 }
+              inblock && $0 ~ ("import " imp "$") { found = 1 }
+              inblock && /^\}/                    { exit }
               END { exit !found }
-            ' caddy/Caddyfile || { echo "MISSING 'import assetlinks' in block: $host"; missing=1; }
+            ' caddy/Caddyfile
+          }
+          while read -r host; do
+            has_import "$host" hsts || { echo "MISSING 'import hsts' in block: $host"; missing=1; }
+            [ "$host" = "www" ] && continue
+            has_import "$host" assetlinks || { echo "MISSING 'import assetlinks' in block: $host"; missing=1; }
           done < <(grep -oE '^[a-z0-9-]+\.\{\$DOMAIN\}' caddy/Caddyfile | cut -d. -f1)
+          has_import "" hsts || { echo "MISSING 'import hsts' in the apex block"; missing=1; }
           [ "$missing" = 0 ] || exit 1
 
           # The edge serving assetlinks is necessary but NOT sufficient: the app
@@ -198,3 +210,28 @@ jobs:
             exit 1
           }
           echo "Asset links verified on every origin"
+
+      - name: Post-deploy HSTS check
+        env:
+          DOMAIN: ${{ secrets.PLATFORM_DOMAIN }}
+        run: |
+          # Every host must send exactly one Strict-Transport-Security header
+          # (security fix plan 5.11): the private apps too (it rides on their
+          # 401) and www (on its redirect). Two would mean an app started
+          # setting its own and the edge's `>` stopped replacing it.
+          hosts="$DOMAIN"
+          for sub in $(grep -oE '^[a-z0-9-]+\.\{\$DOMAIN\}' caddy/Caddyfile | cut -d. -f1); do
+            hosts="$hosts $sub.$DOMAIN"
+          done
+          failed=0
+          for h in $hosts; do
+            n=0
+            for attempt in 1 2 3; do
+              got=$(curl -s --max-time 10 -o /dev/null -D - "https://$h/" | tr -d '\r' | grep -i '^strict-transport-security:' || true)
+              n=$(printf '%s' "$got" | grep -c . || true)
+              [ "$n" -ge 1 ] && break
+              sleep 3
+            done
+            if [ "$n" = 1 ]; then echo "OK   $h  $got"; else echo "FAIL $h: $n Strict-Transport-Security header(s)"; failed=1; fi
+          done
+          [ "$failed" = 0 ] || exit 1

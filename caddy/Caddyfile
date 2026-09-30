@@ -38,6 +38,30 @@
 	}
 }
 
+# ── Shared: HSTS ─────────────────────────────────────────────────────────────
+# Tells browsers to use HTTPS for this host from now on, even when someone types
+# http:// or follows an old link, so a network attacker can't hold a visitor on
+# plain HTTP (security fix plan 5.11). Every site block imports it, the apex and
+# www included; CI fails the build if one doesn't.
+#
+# It is the one header the edge owns for EVERY site: no app sets it, so it
+# doesn't count against the "keep this block bare" rule below. The `>` defers it
+# to when the response is written, so it replaces an upstream's value rather
+# than doubling it (the www redirect gets it too).
+#
+# Deliberately cautious: one day, no includeSubDomains, no preload (preload is
+# near-permanent and covers every subdomain, present and future). Raise it to a
+# year (31536000) once it has been live for a week with every site fine.
+(hsts) {
+	header >Strict-Transport-Security "max-age=86400"
+	# Responses Caddy writes as ERRORS (the private apps' 401, a 502 while an
+	# app restarts) skip the header above, so the error route sets it too. A
+	# site that ever needs its own handle_errors must repeat this line there.
+	handle_errors {
+		header Strict-Transport-Security "max-age=86400"
+	}
+}
+
 # ── Shared: edge auth for PRIVATE apps ───────────────────────────────────────
 # A project meant for me only adds `import private <user> <bcrypt hash>` to its
 # block; public projects simply don't. Browsers cache Basic credentials per
@@ -75,6 +99,7 @@
 
 # ── Apex: the homepage hub, served straight off disk (no homepage container) ──
 {$DOMAIN} {
+	import hsts
 	root * /srv/site
 	file_server
 	encode zstd gzip # homepage is static; safe to compress here
@@ -82,24 +107,28 @@
 
 # www → apex (single canonical homepage)
 www.{$DOMAIN} {
+	import hsts
 	redir https://{$DOMAIN}{uri} permanent
 }
 
 # ── Project #1: roadtrip — reached by container name over its edge network ──
-# Keep this block BARE: roadtrip's Flask already gzips (Flask-Compress) and sets
-# X-Content-Type-Options / X-Frame-Options / Referrer-Policy. Adding `encode` or
-# headers here would double-compress and emit doubled headers. Caddy passes the
-# app's responses straight through.
+# Keep this block BARE apart from the shared imports: roadtrip's Flask already
+# gzips (Flask-Compress) and sets X-Content-Type-Options / X-Frame-Options /
+# Referrer-Policy. Adding `encode` or headers here would double-compress and
+# emit doubled headers. Caddy passes the app's responses straight through.
 roadtrip.{$DOMAIN} {
+	import hsts
 	import assetlinks
 	reverse_proxy roadtrip:8000
 }
 
 # ── Project #2: availability — personal availability calendar ────────────────
-# Keep this block BARE: the Flask app already gzips (Flask-Compress) and sets
-# X-Content-Type-Options / X-Frame-Options / Referrer-Policy (and no-store on
-# /api/*). Adding `encode` or headers here would double them up.
+# Keep this block BARE apart from the shared imports: the Flask app already
+# gzips (Flask-Compress) and sets X-Content-Type-Options / X-Frame-Options /
+# Referrer-Policy (and no-store on /api/*). Adding `encode` or headers here
+# would double them up.
 availability.{$DOMAIN} {
+	import hsts
 	import assetlinks
 	reverse_proxy availability:8000
 }
@@ -111,6 +140,7 @@ availability.{$DOMAIN} {
 # security headers the Flask apps set, so those go on at the edge.
 # It listens on 8765, not 8000.
 bustracker.{$DOMAIN} {
+	import hsts
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
@@ -121,16 +151,18 @@ bustracker.{$DOMAIN} {
 }
 
 # ── Project #4: citywatch — public live camera feeds ─────────────────────────
-# Keep this block BARE: the container is nginx serving a static Vite build, and
-# its own config already gzips (gzip on, over 1 KB, with Vary) and sets
-# Content-Security-Policy / X-Content-Type-Options / Referrer-Policy on every
-# location. Adding `encode` or headers here would double them up.
+# Keep this block BARE apart from the shared imports: the container is nginx
+# serving a static Vite build, and its own config already gzips (gzip on, over
+# 1 KB, with Vary) and sets Content-Security-Policy / X-Content-Type-Options /
+# Referrer-Policy on every location. Adding `encode` or headers here would
+# double them up.
 #
 # It sets no X-Frame-Options on purpose — its CSP carries `frame-ancestors
 # 'self'`, which supersedes it. Don't "fix" that by adding the header here.
 #
 # It listens on 80 (nginx default), not 8000.
 citywatch.{$DOMAIN} {
+	import hsts
 	import assetlinks
 	reverse_proxy citywatch:80
 }
@@ -146,6 +178,7 @@ citywatch.{$DOMAIN} {
 # edge basic_auth, with its own credential (assetlinks excluded inside the snippet).
 flights.{$DOMAIN} {
 	import private {$EDGE_AUTH_FLIGHTS_USER:locked} {$EDGE_AUTH_FLIGHTS_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
+	import hsts
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
@@ -172,6 +205,7 @@ flights.{$DOMAIN} {
 # edge basic_auth, with its own credential (assetlinks excluded inside the snippet).
 speed.{$DOMAIN} {
 	import private {$EDGE_AUTH_SPEED_USER:locked} {$EDGE_AUTH_SPEED_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
+	import hsts
 	import assetlinks
 	reverse_proxy speed:8767
 }
@@ -194,6 +228,7 @@ speed.{$DOMAIN} {
 # `import private` puts the whole subdomain behind its own edge credential.
 oktopus.{$DOMAIN} {
 	import private {$EDGE_AUTH_OKTOPUS_USER:locked} {$EDGE_AUTH_OKTOPUS_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
+	import hsts
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
@@ -205,9 +240,11 @@ oktopus.{$DOMAIN} {
 }
 
 # ── Template for the next project (copy, change the two names, uncomment) ─────
-# The `import assetlinks` line is part of the template: without it that project
-# opens with a URL bar inside the Android app. See CONTRACT.md.
+# The `import hsts` and `import assetlinks` lines are part of the template (CI
+# checks both): without the second that project opens with a URL bar inside the
+# Android app. See CONTRACT.md.
 # newproj.{$DOMAIN} {
+#     import hsts
 #     import assetlinks
 #     reverse_proxy newproj:8000
 # }
@@ -219,6 +256,7 @@ oktopus.{$DOMAIN} {
 # carry the superuser token, not this credential, so it is dropped only on /_/.
 # Repo: gKhazaradze/liftmap-api.
 liftmap-api.{$DOMAIN} {
+	import hsts
 	import assetlinks
 	@dash path /_ /_/*
 	basic_auth @dash {

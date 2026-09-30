@@ -72,6 +72,7 @@ A new project needs:
 5. Add one block to [`caddy/Caddyfile`](caddy/Caddyfile):
    ```caddyfile
    myapp.{$DOMAIN} {
+       import hsts
        import assetlinks
        reverse_proxy myapp:8000
    }
@@ -86,6 +87,10 @@ A new project needs:
    set its own gzip/security headers — Caddy passes the app's responses through,
    and duplicating `encode` or headers causes double-compression / doubled
    headers.
+
+   `import hsts` is not optional either: it tells browsers to use HTTPS for
+   your subdomain from then on (the edge owns that header for every site; your
+   app should not set its own). CI fails the build if a block lacks it.
 
    `import assetlinks` is not optional. The platform ships an **Android app**
    (a Trusted Web Activity — see [`android/`](android/)) that opens the hub
