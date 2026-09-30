@@ -46,6 +46,28 @@ Allow inbound:
 Port 443 is the new one — the old roadtrip setup only needed 80. **Keep 80 open**
 (Caddy needs it for cert issuance/renewal).
 
+### Instance metadata (IMDS)
+
+The instance metadata service must require tokens (IMDSv2) with a **hop limit
+of 1**: the host can still read it, but a container can't, since its requests
+cross one extra hop through Docker's bridge. That way an app bug that lets
+someone make requests from inside a container can't read the instance's
+metadata, or its credentials if an IAM role is ever attached (security fix
+plan 5.12). The instance has no IAM role today.
+
+EC2 console → the instance → Actions → Instance settings → Modify instance
+metadata options: IMDSv2 **Required**, hop limit **1**. Or with the AWS CLI:
+
+```bash
+aws ec2 modify-instance-metadata-options --region eu-central-1 \
+  --instance-id i-084ea60607e6a1681 \
+  --http-endpoint enabled --http-tokens required --http-put-response-hop-limit 1
+```
+
+Check from the box: `curl -s -o /dev/null -w '%{http_code}' http://169.254.169.254/latest/meta-data/`
+answers **401** (no token, no answer), and a token request made from inside any
+app container times out.
+
 ---
 
 ## Step 3 — Prepare the roadtrip repo (do this first, don't deploy yet)
