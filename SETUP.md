@@ -56,11 +56,11 @@ health-checks host :80, which Caddy is taking over). Make these edits in the
 companion changes:
 
 - `docker-compose.yml`: remove the `ports:` block, add `networks: [web]` + the
-  top-level external `web` network. (Keep `container_name: roadtrip`, the
+  top-level external `edge-roadtrip` network. (Keep `container_name: roadtrip`, the
   `roadtrip-data` volume, `TRIP_KEY`, `restart`.)
 - `docker-compose.dev.yml`: add `ports: ["8000:8000"]` so local dev still works.
 - `.github/workflows/main.yml`: both health probes repointed off host :80, plus
-  a `web`-network create-if-missing guard.
+  an `edge-roadtrip` create-if-missing guard.
 - `deploy/setup-server.sh` + its `SETUP.md` Step 3: health check + Caddy-on-host
   guidance updated for the network-only model.
 
@@ -72,7 +72,7 @@ companion changes:
 ## Step 4 — Stage the platform (still no cutover)
 
 SSH to the box and run the provisioner. It installs Docker (if needed), creates
-the `web` network, clones this repo to `/srv/platform`, writes `.env`, and tries
+Caddy's `web` network and every app's `edge-<name>` network, clones this repo to `/srv/platform`, writes `.env`, and tries
 to start Caddy:
 
 ```bash
@@ -103,7 +103,7 @@ Run these back-to-back on the box:
 #    removing its ports: block, which you pushed in Step 3).
 cd /srv/roadtrip
 sudo git fetch --prune origin main && sudo git reset --hard origin/main
-sudo docker compose up -d            # recreates roadtrip with NO host ports, on `web`
+sudo docker compose up -d            # recreates roadtrip with NO host ports, on `edge-roadtrip`
 
 # 2. Confirm nothing still holds host :80.
 sudo ss -ltnp '( sport = :80 )'      # should print no LISTEN line
@@ -196,7 +196,8 @@ handle this; for a host-wide fix (covers every container) add
 unaffected — that uses Docker's `127.0.0.11` resolver.
 
 **Homepage 200 but a project subdomain 502s.** That project's container isn't up
-or isn't on `web`. `docker ps`, `docker network inspect web`, and check the
+or isn't on its `edge-<name>` network (or Caddy isn't). `docker ps`,
+`docker network inspect edge-<name>` (both it and `caddy` must be listed), and check the
 project's `container_name` matches its Caddyfile block.
 
 **`dubious ownership` on first deploy.** The `safe.directory /srv/platform` entry

@@ -11,7 +11,7 @@ This repo turns one box into a multi-project host. It owns two things:
   registry, no DB.
 
 Everything else — the actual projects (roadtrip, …) — lives in its **own repo**
-with its **own CI** and plugs in through the shared `web` network (see
+with its **own CI** and plugs in through its own `edge-<name>` network, shared only with Caddy (see
 [CONTRACT.md](CONTRACT.md)).
 
 ```
@@ -33,7 +33,7 @@ with its **own CI** and plugs in through the shared `web` network (see
 
 | Path | Purpose |
 |------|---------|
-| `docker-compose.yml` | The single `caddy` service; external `web` network; persistent cert volumes. |
+| `docker-compose.yml` | The single `caddy` service; Caddy's `web` plus one external `edge-<name>` network per app; persistent cert volumes. |
 | `caddy/Caddyfile` | The whole edge routing table (apex homepage + one block per project). Mounted as a directory so `git reset` can't leave the container on a stale inode. |
 | `.env.example` | `DOMAIN` + `ACME_EMAIL` (the real `.env` lives on the server). |
 | `site/` | The homepage: `index.html` (the two sides, drawn by `landing.js`), `projects.html` (the cards, drawn by `render.js`), `projects.js` (the registry), `styles.css`. Also the PWA layer — `manifest.webmanifest`, `sw.js`, `pwa.js`, `.well-known/assetlinks.json`. |
@@ -61,8 +61,8 @@ actually open. The trick is `DOMAIN=localhost`: Caddy issues a local cert for
 `localhost`/`*.localhost` instead of calling Let's Encrypt.
 
 ```bash
-docker network create web                          # once
-# put each project on `web` (its base compose already joins it):
+docker network create web                          # once — Caddy's own
+# and one per project, which its base compose joins: docker network create edge-<name>
 (cd ../roadtrip-site && docker compose up -d --build)
 #   …or attach an already-running container:  docker network connect web roadtrip
 
@@ -82,7 +82,7 @@ with the real domain.
 
 Three small edits, fully decoupled — see [CONTRACT.md](CONTRACT.md):
 
-1. In the project repo: join `web`, set a `container_name`, drop host ports.
+1. In the project repo: join its own `edge-<name>` network, set a `container_name`, drop host ports.
 2. Here: one `reverse_proxy` block in `caddy/Caddyfile`.
 3. Here: one entry in the `PROJECTS` registry in `site/projects.js` (+ a
    thumbnail in `site/assets/`).

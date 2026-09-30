@@ -4,13 +4,13 @@
 #
 # Run this ONCE on the server to stand up the Caddy edge + homepage. It will:
 #   - install Docker + the compose plugin (if missing)
-#   - create the shared external Docker network `web` (idempotent)
+#   - create Caddy's `web` network and every app's `edge-<name>` network (idempotent)
 #   - clone/sync the platform repo into /srv/platform
 #   - write /srv/platform/.env (DOMAIN + ACME_EMAIL)
 #   - let the deploy user run docker/git without sudo (for GitHub Actions)
 #   - mark /srv/platform a safe git directory for the deploy user AND root
 #   - start the Caddy edge (binds host :80/:443; serves the homepage; proxies
-#     each project subdomain by container name over `web`)
+#     each project subdomain by container name over that project's own network)
 #
 # IMPORTANT — ordering: Caddy needs host :80/:443. If the roadtrip container is
 # still publishing host :80, this script's `docker compose up` will fail to bind
@@ -66,12 +66,12 @@ if ! docker compose version &>/dev/null; then
     exit 1
 fi
 
-# ─── Shared external network (the contract every project joins) ───────────
+# ─── Caddy's own network (the apps each have an edge-<name>; see below) ────
 if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
-    echo "==> Creating shared network '$NETWORK' ..."
+    echo "==> Creating Caddy's network '$NETWORK' ..."
     docker network create "$NETWORK" >/dev/null
 else
-    echo "==> Shared network '$NETWORK' already exists."
+    echo "==> Caddy's network '$NETWORK' already exists."
 fi
 
 # ─── Let the deploy user drive docker/git; grant passwordless sudo for CI ──
@@ -126,6 +126,10 @@ fi
 
 # ─── Launch the edge ──────────────────────────────────────────────────────
 echo "==> Starting the Caddy edge ..."
+# Every app network the compose attaches Caddy to must exist first (CONTRACT.md).
+for n in $(sed -n 's/^    name: \(edge-.*\)$/\1/p' "$INSTALL_DIR/docker-compose.yml"); do
+    docker network inspect "$n" >/dev/null 2>&1 || docker network create "$n" >/dev/null
+done
 ( cd "$INSTALL_DIR" && docker compose up -d --remove-orphans )
 
 # ─── Health check (container up + local :80 responding) ───────────────────

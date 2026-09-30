@@ -1,13 +1,14 @@
 # The platform edge. One container (Caddy) owns host :80/:443: it terminates
 # TLS, serves the homepage static files directly, and reverse-proxies each
-# project subdomain to a project container by name over the shared `web`
-# network. Projects (roadtrip, etc.) live in their own repos and join `web`.
+# project subdomain to a project container by name, over that project's own
+# `edge-<name>` network. Projects live in their own repos (CONTRACT.md).
 #
 #   docker compose up -d            # start the edge + homepage
 #   docker compose logs -f caddy    # watch cert issuance / requests
 #
 # DOMAIN + ACME_EMAIL come from a .env file next to this one (see .env.example).
-# The `web` network must already exist:  docker network create web
+# The networks must already exist (CI creates any missing):
+#   docker network create web; docker network create edge-<name>  # per app
 
 services:
   caddy:
@@ -34,12 +35,48 @@ services:
       - ./site:/srv/site:ro        # homepage static files (served by file_server)
       - caddy_data:/data           # ACME account + issued certs — MUST persist
       - caddy_config:/config
-    networks: [web]
+    networks:                     # its own `web`, plus every app's edge network
+      - web
+      - edge-roadtrip
+      - edge-availability
+      - edge-bustracker
+      - edge-citywatch
+      - edge-flights
+      - edge-speed
+      - edge-oktopus-booker
+      - edge-liftmap-api
 
 networks:
+  # Each app has its own network, shared with Caddy and nothing else, so one
+  # compromised container reaches no other (security fix plan 5.2; see
+  # CONTRACT.md). All external: created out-of-band (CI creates any missing).
   web:
-    external: true                 # created once out-of-band; shared, not owned
+    external: true
     name: web
+  edge-roadtrip:
+    external: true
+    name: edge-roadtrip
+  edge-availability:
+    external: true
+    name: edge-availability
+  edge-bustracker:
+    external: true
+    name: edge-bustracker
+  edge-citywatch:
+    external: true
+    name: edge-citywatch
+  edge-flights:
+    external: true
+    name: edge-flights
+  edge-speed:
+    external: true
+    name: edge-speed
+  edge-oktopus-booker:
+    external: true
+    name: edge-oktopus-booker
+  edge-liftmap-api:
+    external: true
+    name: edge-liftmap-api
 
 volumes:
   caddy_data:

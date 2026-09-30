@@ -2,23 +2,32 @@
 
 The platform (this repo) owns the **edge** (Caddy on host :80/:443) and the
 **homepage**. Each project stays in its **own repo with its own CI** and plugs
-in through one small, file-free contract: a shared Docker network.
+in through one small, file-free contract: its own Docker network, which it
+shares with Caddy and nothing else.
+
+**Why one network per project, not one shared network.** Until 2026-09-30 every
+project joined one shared `web` network, so any container could reach any other
+directly — past Caddy, and past the edge password that guards the private apps.
+One bug in a public app would have been a way into all of them. Now each
+project's network holds exactly two containers, the project's and Caddy's, and a
+compromised container cannot even resolve its neighbours' names. Keep it so:
+never attach a project to another project's network, or to `web`.
 
 ## The contract (4 lines in the project's `docker-compose.yml`)
 
-1. Join the shared network:
+1. Join the project's own network, named `edge-<container_name>`:
    ```yaml
    services:
      myapp:
-       networks: [web]
+       networks: [edge]
    ```
-2. Declare that network as **external** (the platform owns its lifecycle, the
-   project just attaches):
+2. Declare that network as **external** (created out-of-band; Caddy attaches to
+   it from the platform side):
    ```yaml
    networks:
-     web:
+     edge:
        external: true
-       name: web
+       name: edge-myapp
    ```
 3. Give the service a **stable, unique** `container_name` — convention: use the
    subdomain (`container_name: myapp`). Caddy routes to it by this name.
@@ -26,15 +35,25 @@ in through one small, file-free contract: a shared Docker network.
    the only thing that binds the host edge. (Delete any `ports:` block.)
 
 That's it. No shared files, no imports — the only coupling is the network name
-string `web`.
+string `edge-myapp`.
 
-> If `web` doesn't exist yet, `docker compose up` fails fast with
-> *"network web declared as external, but could not be found"*. Fix:
-> `docker network create web` (the platform provisioner does this for you).
-> Add a `docker network inspect web >/dev/null 2>&1 || docker network create web`
-> guard to your project's CI so a missing network can't red-fail a deploy.
+> If `edge-myapp` doesn't exist yet, `docker compose up` fails fast with
+> *"network edge-myapp declared as external, but could not be found"*. Put this
+> in your project's CI deploy step before `compose up`, so a first deploy
+> creates it and plugs Caddy in without waiting for the platform:
+> ```sh
+> sudo docker network inspect edge-myapp >/dev/null 2>&1 || sudo docker network create edge-myapp
+> sudo docker network connect edge-myapp caddy 2>/dev/null || true
+> ```
 
-## Then register it on the platform (3 edits in THIS repo)
+## Then register it on the platform (4 edits in THIS repo)
+
+0. Add the network to Caddy in [`docker-compose.yml`](docker-compose.yml): a
+   `- edge-myapp` line in the `caddy` service's `networks:` list, and an
+   `edge-myapp: {external: true, name: edge-myapp}` entry (same shape as the
+   others) under the top-level `networks:`. CI creates it if it is missing.
+   Without this, the next platform deploy recreates Caddy without your network
+   and your subdomain 502s.
 
 5. Add one block to [`caddy/Caddyfile`](caddy/Caddyfile):
    ```caddyfile
