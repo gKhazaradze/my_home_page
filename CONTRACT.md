@@ -62,7 +62,13 @@ string `edge-myapp`.
        reverse_proxy myapp:8000
    }
    ```
-   Keep the block **bare** apart from that import, unless your app does *not*
+   For an app meant only for you, add the edge password on its first line —
+   its own, never another app's (the hash lives in the server's `.env`, see
+   SETUP.md "Edge passwords"; the long default is a fail-closed lock):
+   ```caddyfile
+       import private {$EDGE_AUTH_MYAPP_USER:locked} {$EDGE_AUTH_MYAPP_HASH:<copy the default from another private block>}
+   ```
+   Keep the block **bare** apart from those imports, unless your app does *not*
    set its own gzip/security headers — Caddy passes the app's responses through,
    and duplicating `encode` or headers causes double-compression / doubled
    headers.

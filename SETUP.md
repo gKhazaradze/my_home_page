@@ -228,3 +228,31 @@ any hostname in the repo Caddyfile is missing from Caddy's running config.
 **Never delete the `caddy_data` volume.** It holds the ACME account + all certs;
 losing it forces re-issuance and can hit Let's Encrypt rate limits. Exclude it
 from any `docker volume prune`.
+
+## Edge passwords (private apps)
+
+Each private app — flights, speed, oktopus — and the LiftMap Dashboard (`/_/`)
+has its own edge password. The hashes live only in the server's
+`/srv/platform/.env` (never in this public repo); `caddy/Caddyfile` reads them
+as `EDGE_AUTH_<APP>_USER` / `EDGE_AUTH_<APP>_HASH`.
+
+Set or rotate one from your own machine, in your own terminal:
+
+```sh
+deploy/set-edge-password.sh flights          # or speed | oktopus | liftmap_dash
+```
+
+It asks for a password (or generates four random words and shows them once),
+hashes it locally with the same Caddy image, writes the two lines — single-quoted
+— into the server's `.env`, and recreates the Caddy container so it takes effect
+(a few seconds of downtime for every site; `--no-apply` leaves that to the next
+deploy). Nothing else changes: no commit, no push.
+
+**Fail-closed:** an app whose pair is missing gets user `locked` and the hash of a
+secret nobody has, so it refuses every password while every other site keeps
+working. If a private app suddenly rejects your password after a `.env` edit,
+check the values are single-quoted: Compose cuts an unquoted bcrypt hash at its
+second `$`.
+
+Until 2026-09-30 one password guarded all of them and its hash sat in this repo;
+it was rotated then, so the old hash in git history opens nothing.

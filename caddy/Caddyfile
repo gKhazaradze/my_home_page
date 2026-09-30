@@ -39,11 +39,26 @@
 }
 
 # ── Shared: edge auth for PRIVATE apps ───────────────────────────────────────
-# Any project meant for me only adds `import private` to its block; public
-# projects simply don't. One credential guards them all — to rotate it, run
-#   docker run --rm caddy:2-alpine caddy hash-password
-# and replace the hash below. Browsers cache Basic credentials per subdomain,
-# so each private app asks once per device, then never again.
+# A project meant for me only adds `import private <user> <bcrypt hash>` to its
+# block; public projects simply don't. Browsers cache Basic credentials per
+# subdomain, so each private app asks once per device, then never again.
+#
+# EACH app has its own credential, and none lives in this (public) repo: the
+# blocks below pass `{$EDGE_AUTH_<APP>_USER}` / `{$EDGE_AUTH_<APP>_HASH}` from
+# the server's .env (see .env.example; SETUP.md "Edge passwords" rotates them).
+# Until 2026-09-30 one credential, hash committed here, guarded every private app
+# and the LiftMap Dashboard (security fix plan 5.3).
+#
+# FAIL-CLOSED: when a variable is missing, the default is user `locked` with
+# the bcrypt of a random secret that was thrown away the moment it was hashed —
+# so Caddy still starts, every other site stays up, and that one app refuses
+# every password until its credential is set. Never replace the default with a
+# real credential.
+#
+# The browser sends the credential with every request after the first; the
+# apps have no use for it, so `request_header` drops it here and it never
+# reaches a container (basic_auth checks it first: it sorts before
+# request_header in Caddy's directive order).
 #
 # /.well-known/assetlinks.json is excluded on purpose: Chrome fetches it with
 # NO credentials when the Android TWA verifies the origin, so putting it behind
@@ -53,8 +68,9 @@
 (private) {
 	@needs_auth not path /.well-known/assetlinks.json
 	basic_auth @needs_auth {
-		george $2a$14$3Wm148JHMqkWnzoi6kF.L.DypoW9vm1mq0j6/uwqChpjIpo.6A7mW
+		{args[0]} {args[1]}
 	}
+	request_header -Authorization
 }
 
 # ── Apex: the homepage hub, served straight off disk (no homepage container) ──
@@ -69,7 +85,7 @@ www.{$DOMAIN} {
 	redir https://{$DOMAIN}{uri} permanent
 }
 
-# ── Project #1: roadtrip — reached by container name over the `web` network ──
+# ── Project #1: roadtrip — reached by container name over its edge network ──
 # Keep this block BARE: roadtrip's Flask already gzips (Flask-Compress) and sets
 # X-Content-Type-Options / X-Frame-Options / Referrer-Policy. Adding `encode` or
 # headers here would double-compress and emit doubled headers. Caddy passes the
@@ -127,9 +143,9 @@ citywatch.{$DOMAIN} {
 # at the edge. It listens on 8766, not 8000.
 #
 # PRIVATE: personal app — `import private` puts the whole subdomain behind the
-# shared edge basic_auth (assetlinks excluded inside the snippet).
+# edge basic_auth, with its own credential (assetlinks excluded inside the snippet).
 flights.{$DOMAIN} {
-	import private
+	import private {$EDGE_AUTH_FLIGHTS_USER:locked} {$EDGE_AUTH_FLIGHTS_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
@@ -153,9 +169,9 @@ flights.{$DOMAIN} {
 # It listens on 8767, not 8000.
 #
 # PRIVATE: personal app — `import private` puts the whole subdomain behind the
-# shared edge basic_auth (assetlinks excluded inside the snippet).
+# edge basic_auth, with its own credential (assetlinks excluded inside the snippet).
 speed.{$DOMAIN} {
-	import private
+	import private {$EDGE_AUTH_SPEED_USER:locked} {$EDGE_AUTH_SPEED_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
 	import assetlinks
 	reverse_proxy speed:8767
 }
@@ -175,9 +191,9 @@ speed.{$DOMAIN} {
 # It listens on 8768, not 8000.
 #
 # PRIVATE: personal app, and every click books a class on my membership —
-# `import private` puts the whole subdomain behind the shared edge basic_auth.
+# `import private` puts the whole subdomain behind its own edge credential.
 oktopus.{$DOMAIN} {
-	import private
+	import private {$EDGE_AUTH_OKTOPUS_USER:locked} {$EDGE_AUTH_OKTOPUS_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
@@ -197,13 +213,17 @@ oktopus.{$DOMAIN} {
 # }
 
 # ── Project #8: liftmap-api — PocketBase backend for the LiftMap app ─────────
-# Only the Dashboard (/_/) is behind basic_auth; /api/* and the public pages are
-# open (the app talks to /api/ with a user token). Repo: gKhazaradze/liftmap-api.
+# Only the Dashboard (/_/) is behind basic_auth, with its own credential (same
+# fail-closed default as the private snippet); /api/* and the public pages are
+# open (the app talks to /api/ with a user token). The Dashboard's own API calls
+# carry the superuser token, not this credential, so it is dropped only on /_/.
+# Repo: gKhazaradze/liftmap-api.
 liftmap-api.{$DOMAIN} {
 	import assetlinks
 	@dash path /_ /_/*
 	basic_auth @dash {
-		george $2a$14$3Wm148JHMqkWnzoi6kF.L.DypoW9vm1mq0j6/uwqChpjIpo.6A7mW
+		{$EDGE_AUTH_LIFTMAP_DASH_USER:locked} {$EDGE_AUTH_LIFTMAP_DASH_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
 	}
+	request_header @dash -Authorization
 	reverse_proxy liftmap-api:8080
 }
