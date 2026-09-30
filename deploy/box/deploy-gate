@@ -1,0 +1,31 @@
+#!/bin/sh
+# ─────────────────────────────────────────────────────────────────────────
+# /usr/local/bin/deploy-gate — the ONLY thing a CI key can run on the box.
+#
+# Every repo's CI signs in as the unprivileged `deploy` user with its own key,
+# and ~deploy/.ssh/authorized_keys pins each key to this command for one app:
+#
+#   restrict,command="/usr/local/bin/deploy-gate roadtrip" ssh-ed25519 AAAA… ci-roadtrip-site
+#
+# so whatever the CI side asks to run arrives here as SSH_ORIGINAL_COMMAND and
+# is treated as data, never executed. Accepted: the 40-hex commit to deploy, or
+# `check <sha>` to validate without deploying. The work is done by the root-owned
+# /usr/local/sbin/deploy-app, the one command deploy's sudoers entry allows.
+# stdin passes through (a registry token, for the apps that pull images).
+#
+# Security fix plan 5.4: a stolen CI key, or a hijacked GitHub Action holding
+# it, can now only redeploy what is already on the repo's main branch.
+# Source: my_home_page/deploy/box/ — installed by install-deploy-gate.sh.
+# ─────────────────────────────────────────────────────────────────────────
+set -eu
+app="${1:-}"
+req="${SSH_ORIGINAL_COMMAND:-}"
+mode=deploy
+case "$req" in
+  "check "*) mode=check; req="${req#check }" ;;
+esac
+case "$req" in
+  ""|*[!0-9a-f]*) echo "deploy-gate: send the 40-hex commit to deploy (or 'check <sha>')" >&2; exit 2 ;;
+esac
+[ "${#req}" -eq 40 ] || { echo "deploy-gate: a commit SHA is 40 hex characters" >&2; exit 2; }
+exec sudo -n /usr/local/sbin/deploy-app "$mode" "$app" "$req"

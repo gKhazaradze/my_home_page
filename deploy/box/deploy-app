@@ -1,0 +1,73 @@
+#!/bin/bash
+# ─────────────────────────────────────────────────────────────────────────
+# /usr/local/sbin/deploy-app <deploy|check> <app> <sha> — runs as root, via
+# the `deploy` user's single sudoers entry, only from /usr/local/bin/deploy-gate.
+#
+# 1. <app> must be one of the apps below; each has a fixed checkout and branch.
+# 2. The checkout fetches its branch; <sha> must be a commit ON that branch.
+# 3. If the branch has moved past <sha>, a newer push's own run deploys it, so
+#    this one stops (success, nothing done) instead of deploying stale code.
+# 4. Otherwise the checkout is reset to <sha> and the repo's deploy/on-box.sh
+#    runs, as root, with a clean environment, and stdin passed through.
+#
+# So what runs as root is always code from the repo's branch on GitHub — the
+# CI side only chooses WHEN, not WHAT. One deploy per app at a time (flock).
+# Source: my_home_page/deploy/box/ — installed by install-deploy-gate.sh.
+# ─────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+mode="${1:-}"; app="${2:-}"; sha="${3:-}"
+[[ "$mode" == deploy || "$mode" == check ]] || { echo "deploy-app: mode must be deploy or check" >&2; exit 2; }
+[[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "deploy-app: bad commit" >&2; exit 2; }
+
+case "$app" in
+  platform)     dir=/srv/platform       branch=master ;;
+  roadtrip)     dir=/srv/roadtrip       branch=main ;;
+  availability) dir=/srv/availability   branch=main ;;
+  bustracker)   dir=/srv/bustracker     branch=main ;;
+  citywatch)    dir=/srv/citywatch      branch=main ;;
+  flights)      dir=/srv/flighttracker  branch=main ;;
+  speed)        dir=/srv/speedtracker   branch=main ;;
+  oktopus)      dir=/srv/oktopusbooker  branch=main ;;
+  liftmap-api)  dir=/srv/liftmapapi     branch=main ;;
+  *) echo "deploy-app: unknown app '$app'" >&2; exit 2 ;;
+esac
+[[ -d "$dir/.git" ]] || { echo "deploy-app: no checkout at $dir (first clone is by hand, see the repo's SETUP.md)" >&2; exit 3; }
+
+exec 9>"/run/lock/deploy-$app.lock"
+flock -w 900 9 || { echo "deploy-app: another $app deploy is still running" >&2; exit 4; }
+
+# git runs as the checkout's owner when that user holds the git credentials
+# (so .git never gains root-owned files it can't later write: the "FETCH_HEAD:
+# Permission denied" trap), else as root (e.g. /srv/roadtrip, owned by a user
+# with no credentials).
+gituser=$(stat -c %U "$dir/.git")
+githome=$(getent passwd "$gituser" | cut -d: -f6)
+if [[ "$gituser" != root && -n "$githome" && -f "$githome/.git-credentials" ]]; then
+  g() { runuser -u "$gituser" -- git -C "$dir" "$@"; }
+else
+  git config --global --add safe.directory "$dir" 2>/dev/null || true
+  g() { git -C "$dir" "$@"; }
+fi
+echo "--- $app: fetching origin/$branch (as $([[ "$gituser" != root && -f "$githome/.git-credentials" ]] && echo "$gituser" || echo root)) ---"
+g fetch --prune origin "$branch"
+head=$(g rev-parse "origin/$branch")
+if ! g merge-base --is-ancestor "$sha" "origin/$branch" 2>/dev/null; then
+  echo "deploy-app: $sha is not on origin/$branch — refusing" >&2
+  exit 5
+fi
+if [[ "$head" != "$sha" ]]; then
+  echo "--- $app: origin/$branch has moved on to ${head:0:12}; its own run deploys it. Nothing done. ---"
+  exit 0
+fi
+if [[ "$mode" == check ]]; then
+  echo "--- $app: $sha is origin/$branch's head; a deploy would run deploy/on-box.sh ---"
+  exit 0
+fi
+
+g reset --hard "$sha"
+[[ -f "$dir/deploy/on-box.sh" ]] || { echo "deploy-app: $dir has no deploy/on-box.sh at $sha" >&2; exit 6; }
+echo "--- $app: running deploy/on-box.sh at ${sha:0:12} ---"
+cd "$dir"
+exec env -i PATH="$PATH" HOME=/root LANG=C.UTF-8 APP="$app" DEPLOY_SHA="$sha" bash deploy/on-box.sh

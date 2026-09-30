@@ -46,6 +46,20 @@ string `edge-myapp`.
 > sudo docker network connect edge-myapp caddy 2>/dev/null || true
 > ```
 
+## Deploying it (no shell on the box for CI)
+
+CI never gets a shell on the box. Each repo's deploy job signs in as the
+`deploy` user with its own key, which the box pins to one command: deploy that
+app at the commit CI tested. The box then runs the repo's own
+`deploy/on-box.sh` as committed (see [`deploy/box/README.md`](deploy/box/README.md)).
+A new project needs:
+
+- a `deploy/on-box.sh` and the "Deploy over SSH" workflow step — copy both from
+  `flight_tracker`, the template;
+- its app name, checkout dir and branch in `deploy/box/deploy-app` (reinstall);
+- its own key: pinned with `add-deploy-key.sh`, private half in the repo's
+  `EC2_SSH_KEY` secret (the steps are in that README).
+
 ## Then register it on the platform (4 edits in THIS repo)
 
 0. Add the network to Caddy in [`docker-compose.yml`](docker-compose.yml): a
