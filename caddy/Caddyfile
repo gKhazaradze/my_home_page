@@ -139,7 +139,14 @@ availability.{$DOMAIN} {
 # Vary), so adding `encode` here would double-compress — but it sets none of the
 # security headers the Flask apps set, so those go on at the edge.
 # It listens on 8765, not 8000.
+#
+# PRIVATE since 2026-10-06: the app serves a Fog of World overlay
+# (/api/fog/*) — the owner's personal location history — so the whole
+# subdomain moved behind the edge basic_auth, with its own credential
+# (assetlinks excluded inside the snippet). The Android Auto app sends the
+# same credential with every request (BUS_TRACKER_AUTH in its local.properties).
 bustracker.{$DOMAIN} {
+	import private {$EDGE_AUTH_BUSTRACKER_USER:locked} {$EDGE_AUTH_BUSTRACKER_HASH:$2a$14$9MZGjXmdE909qdYVvzqwA.uVEz2MgWIioYtPnUFe3A932J8L0ObL2}
 	import hsts
 	header {
 		X-Content-Type-Options nosniff

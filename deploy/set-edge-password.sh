@@ -5,7 +5,7 @@
 # shown once, here, for your password manager, and nowhere else.
 #
 #   deploy/set-edge-password.sh <app> [user]
-#     app:  flights | speed | oktopus | liftmap_dash
+#     app:  flights | speed | oktopus | bustracker | liftmap_dash
 #     user: the name to sign in with (default: george)
 #
 # It hashes the password locally (the same caddy:2-alpine image the edge runs)
@@ -30,8 +30,8 @@ SSH_HOST="${SSH_HOST:-ubuntu@51.102.88.142}"
 ENV_FILE="/srv/platform/.env"
 
 case "$APP" in
-  flights|speed|oktopus|liftmap_dash) ;;
-  *) echo "usage: $0 <flights|speed|oktopus|liftmap_dash> [user] [--no-apply]" >&2; exit 2 ;;
+  flights|speed|oktopus|bustracker|liftmap_dash) ;;
+  *) echo "usage: $0 <flights|speed|oktopus|bustracker|liftmap_dash> [user] [--no-apply]" >&2; exit 2 ;;
 esac
 VAR=$(printf '%s' "$APP" | tr '[:lower:]' '[:upper:]')
 [[ "$USERNAME" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "user must be letters, digits, _ . -" >&2; exit 2; }
